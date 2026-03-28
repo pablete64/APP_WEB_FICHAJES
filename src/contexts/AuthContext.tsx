@@ -41,8 +41,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const loginAsAdmin = async (password: string): Promise<boolean> => {
-    // Para simplificar la UI temporalmente basada en el mockup, usamos 'admin' como user si clickan "Login as Admin"
-    return login("admin", password);
+    // El usuario ADMIN está alineado con la semilla (seed) y las pruebas E2E.
+    return login("ADMIN", password);
   };
 
   const logout = () => {

@@ -62,16 +62,16 @@ export default function UsersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div className="flex items-center gap-2">
-          <Users className="h-5 w-5 text-primary" />
+          <Users className="h-5 w-5 text-primary shrink-0" />
           <h1 className="text-2xl font-semibold">Usuarios</h1>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" />Añadir Usuario</Button>
+            <Button size="sm" className="gap-1.5 w-full sm:w-auto"><Plus className="h-4 w-4" />Añadir Usuario</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Crear Usuario</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div><Label>Código Empleado</Label><Input value={employeeCode} onChange={e => setEmployeeCode(e.target.value)} /></div>
@@ -92,7 +92,25 @@ export default function UsersPage() {
           </DialogContent>
         </Dialog>
       </div>
-      <Card>
+
+      {/* ── Mobile card list (< md) ── */}
+      <div className="md:hidden space-y-3">
+        {users.map(u => (
+          <div key={u.id} className="rounded-lg border bg-card p-4 flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-semibold text-sm truncate">{u.name}</p>
+              <p className="text-xs text-muted-foreground truncate">{u.home_location || "—"}</p>
+              <span className="inline-block mt-1 text-xs bg-secondary text-secondary-foreground rounded-full px-2 py-0.5">{u.role}</span>
+            </div>
+            <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9" onClick={() => handleDelete(u.id)}>
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Desktop table (≥ md) ── */}
+      <Card className="hidden md:block">
         <CardContent className="p-0">
           <Table>
             <TableHeader>

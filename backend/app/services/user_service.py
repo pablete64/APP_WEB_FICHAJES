@@ -1,26 +1,27 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from fastapi import HTTPException, status
 from app.models.user import User
 from app.schemas.user import UserCreate
 from app.auth.security import get_password_hash
+from app.services.audit_service import log_event
 
 def get_user_by_employee_code(db: Session, employee_code: str) -> User | None:
-    return db.query(User).filter(User.employee_code == employee_code).first()
+    return db.query(User).filter(User.employee_code == employee_code, User.deleted_at == None).first()
 
 def get_user_by_id(db: Session, user_id: str) -> User | None:
-    return db.query(User).filter(User.id == user_id).first()
+    return db.query(User).filter(User.id == user_id, User.deleted_at == None).first()
 
 def list_users(db: Session, skip: int = 0, limit: int = 100) -> list[User]:
-    return db.query(User).offset(skip).limit(limit).all()
+    return db.query(User).filter(User.deleted_at == None).offset(skip).limit(limit).all()
 
-def create_user(db: Session, user_in: UserCreate) -> User:
+def create_user(db: Session, user_in: UserCreate, actor_id: str | None = None) -> User:
     if get_user_by_employee_code(db, employee_code=user_in.employee_code):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Employee code already exists"
         )
     
-    # Optional logic: force the role check
     allowed_roles = ["Proyectistas Mecánicos", "Proyectistas Eléctricos", "Programadores", "Montadores", "Management", "Admin"]
     if user_in.role not in allowed_roles:
          raise HTTPException(
@@ -37,15 +38,23 @@ def create_user(db: Session, user_in: UserCreate) -> User:
         password_hash=get_password_hash(user_in.password)
     )
     db.add(db_user)
+    db.flush() # ID generation
+    
+    log_event(db, actor_id, "User", db_user.id, "CREATE", changes={"employee_code": user_in.employee_code, "role": user_in.role})
+    
     db.commit()
     db.refresh(db_user)
     return db_user
 
-def delete_user(db: Session, user_id: str) -> bool:
+def delete_user(db: Session, user_id: str, actor_id: str | None = None) -> bool:
     user = get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    db.delete(user)
+    user.deleted_at = func.now()
+    db.add(user)
+    
+    log_event(db, actor_id, "User", user_id, "SOFT_DELETE")
+    
     db.commit()
     return True

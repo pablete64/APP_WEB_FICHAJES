@@ -63,14 +63,14 @@ try:
     
     print("Creating 8 new Employees...")
     emp_data = [
-        {"name": "Antonio Merino", "role": "PROYECTISTAS MECÁNICOS"},
-        {"name": "Gemma", "role": "PROYECTISTAS ELECTRICOS"},
-        {"name": "Antonio Silva", "role": "PROGRAMADORES"},
-        {"name": "Ernesto Soriano", "role": "PROYECTISTAS MECÁNICOS"},
-        {"name": "Kevin Soriano", "role": "PROYECTISTAS ELECTRICOS"},
-        {"name": "Pablo Cabaleiro", "role": "PROGRAMADORES"},
-        {"name": "CATHAYSA", "role": "MONTADORES"},
-        {"name": "Arnau", "role": "MONTADORES"},
+        {"name": "Antonio Merino", "role": "Proyectistas Mecánicos"},
+        {"name": "Gemma", "role": "Proyectistas Eléctricos"},
+        {"name": "Antonio Silva", "role": "Programadores"},
+        {"name": "Ernesto Soriano", "role": "Proyectistas Mecánicos"},
+        {"name": "Kevin Soriano", "role": "Proyectistas Eléctricos"},
+        {"name": "Pablo Cabaleiro", "role": "Programadores"},
+        {"name": "CATHAYSA", "role": "Montadores"},
+        {"name": "Arnau", "role": "Montadores"},
     ]
     
     new_users = []
@@ -111,8 +111,9 @@ try:
     
     tasks_cache = db.query(Task).all()
     tasks_by_role = {}
-    for r in ["PROYECTISTAS MECÁNICOS", "PROYECTISTAS ELECTRICOS", "PROGRAMADORES", "MONTADORES"]:
-        tasks_by_role[r] = [t for t in tasks_cache if r in t.allowed_roles]
+    for r in ["Proyectistas Mecánicos", "Proyectistas Eléctricos", "Programadores", "Montadores"]:
+        # Case-insensitive matching as fallback, though now it matches exactly
+        tasks_by_role[r] = [t for t in tasks_cache if r.lower() in [role.lower() for role in t.allowed_roles]]
         
     while current_hours < total_hours_target or current_overtime < total_overtime_target:
         # Pick a random user

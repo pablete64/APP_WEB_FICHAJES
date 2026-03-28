@@ -184,53 +184,59 @@ export default function AdminDashboard() {
             }
           </div>
 
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-              <SelectTrigger className="w-[210px] h-9 bg-card">
-                <SelectValue placeholder="Proyecto" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos los proyectos</SelectItem>
-                {projects.map((p: any) => (
-                  <SelectItem key={p.id} value={p.id}>[{p.code}] {p.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2 w-full lg:w-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 w-full lg:w-auto">
+              <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+                <SelectTrigger className="w-full lg:w-[200px] h-9 bg-card">
+                  <SelectValue placeholder="Proyecto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los proyectos</SelectItem>
+                  {projects.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>[{p.code}] {p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="w-[130px] h-9 bg-card">
-                <SelectValue placeholder="Año" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Histórico</SelectItem>
-                {availableYears.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
-              </SelectContent>
-            </Select>
+              <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <SelectTrigger className="w-full lg:w-[120px] h-9 bg-card">
+                  <SelectValue placeholder="Año" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Histórico</SelectItem>
+                  {availableYears.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                </SelectContent>
+              </Select>
 
-            <Select value={selectedMonth} onValueChange={setSelectedMonth} disabled={selectedYear === "all" || !!startDate || !!endDate}>
-              <SelectTrigger className="w-[155px] h-9 bg-card">
-                <SelectValue placeholder="Mes" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todo el año</SelectItem>
-                {availableMonths.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
+              <Select value={selectedMonth} onValueChange={setSelectedMonth} disabled={selectedYear === "all" || !!startDate || !!endDate}>
+                <SelectTrigger className="w-full lg:w-[140px] h-9 bg-card">
+                  <SelectValue placeholder="Mes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todo el año</SelectItem>
+                  {availableMonths.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 11, color: C.dim, fontWeight: 600 }}>Desde</span>
-              <input type="date" value={startDate}
-                onChange={e => { setStartDate(e.target.value); if (e.target.value) { setSelectedYear("all"); setSelectedMonth("all"); } }}
-                style={{ height: 36, padding: "0 8px", borderRadius: 6, border: `1px solid ${C.border}`, fontSize: 12, background: C.card, color: C.text }}
-              />
-              <span style={{ fontSize: 11, color: C.dim, fontWeight: 600 }}>Hasta</span>
-              <input type="date" value={endDate}
-                onChange={e => { setEndDate(e.target.value); if (e.target.value) { setSelectedYear("all"); setSelectedMonth("all"); } }}
-                style={{ height: 36, padding: "0 8px", borderRadius: 6, border: `1px solid ${C.border}`, fontSize: 12, background: C.card, color: C.text }}
-              />
+            <div className="flex flex-col lg:flex-row lg:items-center gap-2 w-full lg:w-auto mt-2 lg:mt-0">
+              <div className="flex items-center gap-1.5 w-full lg:w-auto min-w-0">
+                <span className="text-[10px] font-semibold text-slate-500 uppercase w-12 lg:w-auto">Desde</span>
+                <input type="date" value={startDate}
+                  onChange={e => { setStartDate(e.target.value); if (e.target.value) { setSelectedYear("all"); setSelectedMonth("all"); } }}
+                  className="h-9 px-2 rounded-md border border-slate-200 text-xs bg-card text-slate-900 w-full lg:w-auto flex-1 lg:flex-initial"
+                />
+              </div>
+              <div className="flex items-center gap-1.5 w-full lg:w-auto min-w-0">
+                <span className="text-[10px] font-semibold text-slate-500 uppercase w-12 lg:w-auto">Hasta</span>
+                <input type="date" value={endDate}
+                  onChange={e => { setEndDate(e.target.value); if (e.target.value) { setSelectedYear("all"); setSelectedMonth("all"); } }}
+                  className="h-9 px-2 rounded-md border border-slate-200 text-xs bg-card text-slate-900 w-full lg:w-auto flex-1 lg:flex-initial"
+                />
+              </div>
               {(startDate || endDate) && (
                 <button onClick={() => { setStartDate(""); setEndDate(""); }}
-                  style={{ fontSize: 11, color: C.red, border: "none", background: "transparent", cursor: "pointer", fontWeight: 700 }}
+                  className="text-red-500 text-xs font-bold border-0 bg-transparent cursor-pointer px-1 self-end lg:self-auto"
                 >✕</button>
               )}
             </div>
@@ -273,7 +279,7 @@ export default function AdminDashboard() {
           {!loadingSummary && activeTab === "primary" && (
             <>
               {/* KPIs */}
-              <div style={{ display: "flex", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
+              <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6">
                 <KPI label="Total Horas" val={totalHours.toLocaleString("es-ES", { maximumFractionDigits: 1 })} unit="h" color={C.accent} sub={`${employeeCount} empleados activos`} />
                 <KPI label="Fichajes" val={totalEntries.toLocaleString()} unit="" color={C.accent2} sub={`Ø ${(totalEntries / Math.max(1, sortedDailySummary.length)).toFixed(1)} / día`} />
                 <KPI label="Empleados" val={employeeCount} unit="" color={C.green} sub="Con actividad" />

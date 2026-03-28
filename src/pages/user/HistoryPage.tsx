@@ -22,10 +22,41 @@ export default function HistoryPage() {
   return (
     <div>
       <div className="flex items-center gap-2 mb-6">
-        <History className="h-5 w-5 text-primary" />
+        <History className="h-5 w-5 text-primary shrink-0" />
         <h1 className="text-2xl font-semibold">Historial</h1>
       </div>
-      <div className="rounded-lg border bg-card overflow-auto">
+
+      {/* ── Mobile card list (< md) ── */}
+      <div className="md:hidden space-y-3">
+        {entries.length === 0 && (
+          <p className="text-center text-muted-foreground py-12">Aún no hay registros</p>
+        )}
+        {entries.map(e => {
+          const task = getTask(e.task_id);
+          const project = getProject(e.project_id);
+          return (
+            <div key={e.id} className="rounded-lg border bg-card p-4 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-semibold text-sm">{e.date}</span>
+                <div className="flex gap-1.5">
+                  {e.is_holiday && <Badge variant="outline" className="text-xs">Festivo</Badge>}
+                  {e.overtime_hours > 0 && (
+                    <Badge variant="secondary" className="text-xs">{e.overtime_hours}h extra</Badge>
+                  )}
+                </div>
+              </div>
+              <p className="text-sm text-muted-foreground truncate">
+                {project ? `[${project.code}] ${project.name}` : "—"}
+              </p>
+              <p className="text-sm truncate">{task ? `${task.code} – ${task.name}` : "—"}</p>
+              <p className="text-base font-bold text-primary">{e.hours}h</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ── Desktop table (≥ md) ── */}
+      <div className="hidden md:block rounded-lg border bg-card overflow-auto">
         <Table>
           <TableHeader>
             <TableRow>

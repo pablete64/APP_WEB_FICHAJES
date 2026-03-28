@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from fastapi import HTTPException, status
 from typing import List
 
@@ -8,10 +9,10 @@ from app.models.user import User
 from app.schemas.project import ProjectCreate
 
 def get_project_by_id(db: Session, project_id: str) -> Project | None:
-    return db.query(Project).filter(Project.id == project_id).first()
+    return db.query(Project).filter(Project.id == project_id, Project.deleted_at == None).first()
 
 def get_project_by_code(db: Session, code: str) -> Project | None:
-    return db.query(Project).filter(Project.code == code).first()
+    return db.query(Project).filter(Project.code == code, Project.deleted_at == None).first()
 
 def create_project(db: Session, project_in: ProjectCreate) -> Project:
     if get_project_by_code(db, code=project_in.code):
@@ -62,17 +63,18 @@ def delete_project(db: Session, project_id: str):
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
         
-    db.delete(project)
+    project.deleted_at = func.now()
+    db.add(project)
     db.commit()
     return True
 
 def list_projects(db: Session, skip: int = 0, limit: int = 100) -> List[Project]:
-    return db.query(Project).offset(skip).limit(limit).all()
+    return db.query(Project).filter(Project.deleted_at == None).offset(skip).limit(limit).all()
 
 def list_projects_for_user(db: Session, user_id: str) -> List[Project]:
-    # Los proyectos globales como el no-productivo, deberían verse si no tienen restricción
     return db.query(Project).filter(
-        Project.users.any(User.id == user_id) | (Project.type == 'non-productive')
+        (Project.users.any(User.id == user_id) | (Project.type == 'non-productive')),
+        Project.deleted_at == None
     ).all()
 
 def assign_user_to_project(db: Session, project_id: str, user_id: str):

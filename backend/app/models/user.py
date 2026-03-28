@@ -15,6 +15,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    deleted_at = Column(DateTime(timezone=True), nullable=True) # Soft delete Column
 
     projects = relationship("Project", secondary=project_user_table, back_populates="users")
     time_entries = relationship("TimeEntry", back_populates="user")

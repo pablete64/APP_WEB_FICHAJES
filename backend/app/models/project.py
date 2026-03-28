@@ -18,6 +18,7 @@ class Project(Base):
     type = Column(String(20), nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    deleted_at = Column(DateTime(timezone=True), nullable=True) # Soft delete Column
 
     users = relationship("User", secondary=project_user_table, back_populates="projects")
     time_entries = relationship("TimeEntry", back_populates="project")

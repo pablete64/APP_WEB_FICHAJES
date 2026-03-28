@@ -28,4 +28,12 @@ backend/venv
 backend/.env
 backend/*.db
 backend/.pytest_cache
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Environment files
+.env
+.env.local
+.env.*.local
 

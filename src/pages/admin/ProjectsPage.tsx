@@ -84,16 +84,16 @@ export default function ProjectsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div className="flex items-center gap-2">
-          <FolderKanban className="h-5 w-5 text-primary" />
+          <FolderKanban className="h-5 w-5 text-primary shrink-0" />
           <h1 className="text-2xl font-semibold">Proyectos</h1>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5"><Plus className="h-4 w-4" />Añadir Proyecto</Button>
+            <Button size="sm" className="gap-1.5 w-full sm:w-auto"><Plus className="h-4 w-4" />Añadir Proyecto</Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Crear Proyecto</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div>
@@ -142,7 +142,36 @@ export default function ProjectsPage() {
           </DialogContent>
         </Dialog>
       </div>
-      <Card>
+
+      {/* ── Mobile card list (< md) ── */}
+      <div className="md:hidden space-y-3">
+        {projects.map(p => (
+          <div key={p.id} className="rounded-lg border bg-card p-4 space-y-2">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="secondary">{p.code}</Badge>
+                  <span className="font-semibold text-sm truncate">{p.name}</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 truncate">{p.location || "—"}</p>
+              </div>
+              <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9" onClick={() => handleDelete(p.id)}>
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              <span className="text-xs bg-muted rounded px-2 py-0.5">{TYPE_LABELS[p.type] || p.type}</span>
+              <span className="text-xs text-muted-foreground">{p.start_date}</span>
+              {((p.travel_time_to || 0) > 0 || (p.travel_time_from || 0) > 0) && (
+                <span className="text-xs text-muted-foreground">↑{p.travel_time_to ?? 0}′ ↓{p.travel_time_from ?? 0}′</span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Desktop table (≥ md) ── */}
+      <Card className="hidden md:block">
         <CardContent className="p-0">
           <Table>
             <TableHeader>

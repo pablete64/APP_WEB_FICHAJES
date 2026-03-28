@@ -1,0 +1,29 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies required for psycopg2 and building packages
+RUN apt-get update && apt-get install -y \
+    libpq-dev \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application
+COPY . .
+
+# Create a non-root user and switch to it for better security
+RUN useradd -m appuser && chown -R appuser /app
+USER appuser
+
+# Expose backend port
+EXPOSE 8000
+
+# Script to run migrations and start the server
+COPY --chown=appuser:appuser docker-entrypoint.sh .
+RUN chmod +x docker-entrypoint.sh
+
+CMD ["./docker-entrypoint.sh"]

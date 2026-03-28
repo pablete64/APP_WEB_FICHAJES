@@ -11,3 +11,4 @@ from .user import User
 from .project import Project
 from .task import Task
 from .time_entry import TimeEntry
+from .audit_log import AuditLog

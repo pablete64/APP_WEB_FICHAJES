@@ -38,13 +38,10 @@ def get_entries_by_user(user_id: str, skip: int = 0, limit: int = 100, db: Sessi
 @router.put("/{entry_id}", response_model=TimeEntryResponse)
 def update_time_entry(entry_id: str, entry: TimeEntryCreate, db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
     """Actualiza un registro de horas. Solo administrador."""
-    # Como es admin, permitimos cambiar todo usando la lógica de creación pero adaptada a update
-    # Nota: Usamos create logic para reutilizar validaciones de horas/8h auto-split si se desea, 
-    # pero aquí implementaremos un update simple en el service después.
-    return time_entry_service.update_entry(db, entry_id, entry)
+    return time_entry_service.update_entry(db, entry_id, entry, actor_id=current_user.id)
 
 @router.delete("/{entry_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_time_entry(entry_id: str, db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
     """Borrar un impute de horas físico. Solo administrador."""
-    time_entry_service.delete_entry(db, entry_id)
+    time_entry_service.delete_entry(db, entry_id, actor_id=current_user.id)
     return None

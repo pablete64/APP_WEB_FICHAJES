@@ -10,7 +10,7 @@ def get_task_by_code(tasks, code):
 def test_create_standard_entry_assigned_ok(user_client, admin_client, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "standard")
     admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
-    task = get_task_by_code(seed_tasks, "111")
+    task = get_task_by_code(seed_tasks, "313")
     
     payload = {
         "project_id": project.id,
@@ -27,7 +27,7 @@ def test_create_standard_entry_assigned_ok(user_client, admin_client, seed_proje
 def test_create_standard_entry_not_assigned_fallback(user_client, seed_projects, seed_tasks):
     project = get_project_by_type(seed_projects, "standard")
     # No lo asignamos
-    task = get_task_by_code(seed_tasks, "111")
+    task = get_task_by_code(seed_tasks, "313")
     
     payload = {
         "project_id": project.id,
@@ -41,7 +41,7 @@ def test_create_standard_entry_not_assigned_fallback(user_client, seed_projects,
 
 def test_create_non_productive_not_assigned_ok(user_client, seed_projects, seed_tasks):
     project = get_project_by_type(seed_projects, "non-productive")
-    task = get_task_by_code(seed_tasks, "111")
+    task = get_task_by_code(seed_tasks, "313")
     
     payload = {
         "project_id": project.id,
@@ -55,7 +55,7 @@ def test_create_non_productive_not_assigned_ok(user_client, seed_projects, seed_
 def test_create_entry_future_date_fails(user_client, admin_client, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "standard")
     admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
-    task = get_task_by_code(seed_tasks, "111")
+    task = get_task_by_code(seed_tasks, "313")
     
     future_date = (date.today() + timedelta(days=1)).isoformat()
     payload = {
@@ -71,7 +71,7 @@ def test_create_entry_future_date_fails(user_client, admin_client, seed_projects
 def test_create_entry_invalid_hours(user_client, admin_client, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "standard")
     admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
-    task = get_task_by_code(seed_tasks, "111")
+    task = get_task_by_code(seed_tasks, "313")
     
     # Hours > 24
     payload = {
@@ -105,11 +105,12 @@ def test_task_4xx_requires_fields(user_client, admin_client, seed_projects, seed
     response = user_client.post("/time-entries/", json=payload)
     assert response.status_code == 201
 
-def test_offer_project_task_rules(user_client, admin_client, seed_projects, seed_tasks, normal_user):
+def test_offer_project_task_rules(user_client, admin_client, admin_user, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "offer")
     admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project.id}/assign-user/{admin_user.id}")
     
-    task_std = get_task_by_code(seed_tasks, "111")
+    task_std = get_task_by_code(seed_tasks, "313")
     task_115 = get_task_by_code(seed_tasks, "115")
     
     payload = {
@@ -119,12 +120,12 @@ def test_offer_project_task_rules(user_client, admin_client, seed_projects, seed
     }
     # Tarea distinta a 115 debe fallar
     payload["task_id"] = task_std.id
-    response = user_client.post("/time-entries/", json=payload)
+    response = admin_client.post("/time-entries/", json=payload)
     assert response.status_code == 400
     
     # Tarea 115 debe funcionar
     payload["task_id"] = task_115.id
-    response = user_client.post("/time-entries/", json=payload)
+    response = admin_client.post("/time-entries/", json=payload)
     assert response.status_code == 201
 
 # --- NUEVOS CASOS DE PRUEBA (FASE 9.5) ---
@@ -132,7 +133,7 @@ def test_offer_project_task_rules(user_client, admin_client, seed_projects, seed
 def test_create_entry_invalid_project(user_client, seed_tasks):
     payload = {
         "project_id": "fake-uuid",
-        "task_id": seed_tasks[0].id,
+        "task_id": seed_tasks[3].id,
         "date": date.today().isoformat(),
         "hours": 8.0
     }
@@ -155,7 +156,7 @@ def test_create_entry_invalid_task(user_client, admin_client, seed_projects, nor
 def test_extra_fields_ignored_on_standard_task(user_client, admin_client, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "standard")
     admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
-    task = get_task_by_code(seed_tasks, "111")
+    task = get_task_by_code(seed_tasks, "313")
     
     payload = {
         "project_id": project.id,
@@ -183,7 +184,7 @@ def test_extra_fields_ignored_on_standard_task(user_client, admin_client, seed_p
 def test_time_entries_rbac_admin_vs_user(user_client, admin_client, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "standard")
     admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
-    task = get_task_by_code(seed_tasks, "111")
+    task = get_task_by_code(seed_tasks, "313")
     
     payload = {"project_id": project.id, "task_id": task.id, "date": date.today().isoformat(), "hours": 4.0}
     res = user_client.post("/time-entries/", json=payload)

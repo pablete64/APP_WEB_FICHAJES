@@ -1,7 +1,7 @@
 def test_reports_projects_aggregation(admin_client, user_client, seed_projects, seed_tasks, normal_user):
     # Simulamos algunas entradas
     project_id = seed_projects[0].id # P-STD
-    task_id = seed_tasks[0].id
+    task_id = seed_tasks[3].id
     admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}")
     
     admin_client.post("/time-entries/", json={
@@ -35,7 +35,7 @@ def test_reports_projects_aggregation(admin_client, user_client, seed_projects, 
 def test_export_csv_report(admin_client, user_client, seed_projects, seed_tasks, normal_user):
     # Setup some data
     project_id = seed_projects[0].id
-    task_id = seed_tasks[0].id
+    task_id = seed_tasks[3].id
     admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}")
     
     admin_client.post("/time-entries/", json={
@@ -58,7 +58,7 @@ def test_reports_rbac_user_forbidden(user_client):
 
 def test_reports_date_filtering(admin_client, user_client, seed_projects, seed_tasks, normal_user):
     project_id = seed_projects[0].id
-    task_id = seed_tasks[0].id
+    task_id = seed_tasks[3].id
     admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}")
     
     # Entry 1 (Out of bounds)
@@ -78,7 +78,7 @@ def test_reports_date_filtering(admin_client, user_client, seed_projects, seed_t
 
 def test_reports_other_aggregations_exist(admin_client, user_client, seed_projects, seed_tasks, normal_user):
     project_id = seed_projects[0].id
-    task_id = seed_tasks[0].id
+    task_id = seed_tasks[3].id
     admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}")
     
     admin_client.post("/time-entries/", json={"project_id": project_id, "task_id": task_id, "date": "2025-03-01", "hours": 6.0, "user_id": normal_user.id})
@@ -91,9 +91,25 @@ def test_reports_other_aggregations_exist(admin_client, user_client, seed_projec
     # Tasks
     res_tasks = admin_client.get("/reports/tasks")
     assert res_tasks.status_code == 200
-    assert any(t["task_code"] == seed_tasks[0].code for t in res_tasks.json())
+    assert any(t["task_code"] == seed_tasks[3].code for t in res_tasks.json())
     
     # Daily
     res_daily = admin_client.get("/reports/daily")
     assert res_daily.status_code == 200
     assert any("2025-03-01" in d["date"] for d in res_daily.json())
+
+def test_reports_analytics_summary(admin_client, user_client, seed_projects, seed_tasks, normal_user):
+    project_id = seed_projects[0].id
+    task_id = seed_tasks[3].id
+    admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}")
+    
+    admin_client.post("/time-entries/", json={
+        "project_id": project_id, "task_id": task_id, "date": "2025-07-01", "hours": 4.0, "user_id": normal_user.id
+    })
+
+    response = admin_client.get("/reports/summary")
+    assert response.status_code == 200
+    data = response.json()
+    assert "heatmap" in data
+    assert "daily_summary" in data
+    assert any(u["name"] == normal_user.name and u["hours"] >= 4.0 for u in data["user_totals"])

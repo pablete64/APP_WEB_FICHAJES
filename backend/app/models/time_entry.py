@@ -28,6 +28,7 @@ class TimeEntry(Base):
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    deleted_at = Column(DateTime(timezone=True), nullable=True) # Soft delete Column
 
     user = relationship("User", back_populates="time_entries")
     project = relationship("Project", back_populates="time_entries")

@@ -16,10 +16,10 @@ def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), c
 @router.post("/", response_model=UserResponse)
 def create_new_user(user: UserCreate, db: Session = Depends(get_db), current_user = Depends(require_admin)):
     """Crea un usuario nuevo. (Requiere permisos de Admin)"""
-    return user_service.create_user(db=db, user_in=user)
+    return user_service.create_user(db=db, user_in=user, actor_id=current_user.id)
 
 @router.delete("/{user_id}", status_code=204)
 def delete_user(user_id: str, db: Session = Depends(get_db), current_user = Depends(require_admin)):
     """Elimina un usuario por su ID. (Requiere permisos de Admin)"""
-    user_service.delete_user(db, user_id=user_id)
+    user_service.delete_user(db, user_id=user_id, actor_id=current_user.id)
     return None

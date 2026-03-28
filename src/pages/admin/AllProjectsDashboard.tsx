@@ -110,7 +110,7 @@ export default function AllProjectsDashboard({
     <div style={{ padding: "60px 28px", textAlign: "center", color: C.red }}>
       <div style={{ fontSize: 32, marginBottom: 12 }}>⚠️</div>
       <div style={{ fontSize: 14, fontWeight: 600 }}>Error al conectar con el servidor.</div>
-      <div style={{ fontSize: 12, color: C.dim, marginTop: 6 }}>Comprueba que el backend está activo en http://localhost:8000</div>
+      <div style={{ fontSize: 12, color: C.dim, marginTop: 6 }}>Comprueba que el backend está activo en {import.meta.env.VITE_API_URL || 'http://localhost:8000'}</div>
     </div>
   );
 
@@ -118,7 +118,7 @@ export default function AllProjectsDashboard({
     <div style={{ padding: "20px 28px", maxWidth: 1240, margin: "0 auto" }}>
 
       {/* KPIs */}
-      <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
         <KPI label="Horas Totales" val={totalHours.toLocaleString("es-ES", { maximumFractionDigits: 1 })} unit="h" color={C.accent} sub="Todos los proyectos" />
         <KPI label="Fichajes" val={totalEntries.toLocaleString()} unit="" color={C.accent2} sub="Registros totales" />
         <KPI label="Proyectos" val={projectTotals.length} unit="" color={C.catTaller} sub={`de ${projects.length} en el sistema`} />
@@ -197,7 +197,7 @@ export default function AllProjectsDashboard({
       </CustomCard>
 
       {/* 04 + 05 — Category + Treemap side by side */}
-      <div style={{ display: "grid", gridTemplateColumns: "minmax(300px,1fr) minmax(300px,1.6fr)", gap: 20 }}>
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_1.6fr] gap-5">
         <div>
           <Section num="04" title="Distribución Global por Categoría" sub="Reparto del esfuerzo total." />
           <CustomCard>

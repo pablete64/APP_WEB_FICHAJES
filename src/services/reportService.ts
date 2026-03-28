@@ -26,12 +26,16 @@ export interface DailyReport {
     total_hours: number;
 }
 
+export type FilterParams = Record<string, string | number | boolean | undefined | null>;
+
 // Helper to convert object into query string
-const buildQueryString = (filters?: Record<string, string | undefined>) => {
+export const buildQueryString = (filters?: FilterParams) => {
     if (!filters) return '';
     const searchParams = new URLSearchParams();
     Object.entries(filters).forEach(([key, value]) => {
-        if (value) searchParams.append(key, value);
+        if (value !== undefined && value !== null && value !== '') {
+            searchParams.append(key, String(value));
+        }
     });
     const queryString = searchParams.toString();
     return queryString ? `?${queryString}` : '';
@@ -53,27 +57,27 @@ export interface AnalyticsSummary {
 }
 
 export const reportService = {
-    getAnalyticsSummary: async (filters?: Record<string, string>): Promise<AnalyticsSummary> => {
+    getAnalyticsSummary: async (filters?: FilterParams): Promise<AnalyticsSummary> => {
         return fetchApi<AnalyticsSummary>(`/reports/summary${buildQueryString(filters)}`);
     },
 
-    getProjectReport: async (filters?: Record<string, string>): Promise<ProjectReport[]> => {
+    getProjectReport: async (filters?: FilterParams): Promise<ProjectReport[]> => {
         return fetchApi<ProjectReport[]>(`/reports/projects${buildQueryString(filters)}`);
     },
 
-    getUserReport: async (filters?: Record<string, string>): Promise<UserReport[]> => {
+    getUserReport: async (filters?: FilterParams): Promise<UserReport[]> => {
         return fetchApi<UserReport[]>(`/reports/users${buildQueryString(filters)}`);
     },
 
-    getTaskReport: async (filters?: Record<string, string>): Promise<TaskReport[]> => {
+    getTaskReport: async (filters?: FilterParams): Promise<TaskReport[]> => {
         return fetchApi<TaskReport[]>(`/reports/tasks${buildQueryString(filters)}`);
     },
 
-    getDailyReport: async (filters?: Record<string, string>): Promise<DailyReport[]> => {
+    getDailyReport: async (filters?: FilterParams): Promise<DailyReport[]> => {
         return fetchApi<DailyReport[]>(`/reports/daily${buildQueryString(filters)}`);
     },
 
-    exportXLSX: async (filters?: Record<string, string>): Promise<void> => {
+    exportXLSX: async (filters?: FilterParams): Promise<void> => {
         const blob = await fetchApi<Blob>(`/reports/export${buildQueryString(filters)}`);
 
         // Download Blob functionality

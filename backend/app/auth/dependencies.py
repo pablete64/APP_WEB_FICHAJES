@@ -15,7 +15,13 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        payload = jwt.decode(
+            token, 
+            settings.SECRET_KEY, 
+            algorithms=[settings.JWT_ALGORITHM],
+            issuer="timeflow-api",
+            audience="timeflow-client"
+        )
         employee_code: str = payload.get("sub")
         if employee_code is None:
             raise credentials_exception

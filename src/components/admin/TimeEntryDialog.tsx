@@ -88,7 +88,7 @@ export function TimeEntryDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle>{entry ? "Editar Fichaje" : "Crear Nuevo Fichaje"}</DialogTitle>
                     <DialogDescription>
@@ -97,7 +97,7 @@ export function TimeEntryDialog({
                 </DialogHeader>
 
                 <div className="grid gap-6 py-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Usuario</Label>
                             <Select
@@ -124,7 +124,7 @@ export function TimeEntryDialog({
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Proyecto</Label>
                             <Select
@@ -159,7 +159,7 @@ export function TimeEntryDialog({
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div className="space-y-2">
                             <Label>Horas Normales</Label>
                             <Input
@@ -192,7 +192,7 @@ export function TimeEntryDialog({
 
                     <div className="border-t pt-4">
                         <h4 className="text-sm font-medium mb-4">Campos Adicionales (Desplazamiento/Dietas)</h4>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Vehículo</Label>
                                 <Select
@@ -204,8 +204,9 @@ export function TimeEntryDialog({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="none">Ninguno</SelectItem>
-                                        <SelectItem value="personal">Vehículo Personal</SelectItem>
-                                        <SelectItem value="company">Vehículo Empresa</SelectItem>
+                                        <SelectItem value="coche_personal">Coche particular</SelectItem>
+                                        <SelectItem value="moto_personal">Moto particular</SelectItem>
+                                        <SelectItem value="company">Vehículo de empresa</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -226,7 +227,7 @@ export function TimeEntryDialog({
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 mt-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                             <div className="space-y-2">
                                 <Label>Origen (Municipio/CP)</Label>
                                 <Input
@@ -249,9 +250,9 @@ export function TimeEntryDialog({
                     </div>
                 </div>
 
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                    <Button onClick={handleSave} disabled={loading}>
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Cancelar</Button>
+                    <Button onClick={handleSave} disabled={loading} className="w-full sm:w-auto">
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {entry ? "Actualizar" : "Crear"}
                     </Button>

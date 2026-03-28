@@ -31,7 +31,7 @@ const userItems = [
 
 export function AppSidebar() {
   const { isAdmin, user, logout } = useAuth();
-  const { state } = useSidebar();
+  const { state, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const items = isAdmin ? adminItems : userItems;
 
@@ -56,6 +56,7 @@ export function AppSidebar() {
                       end={item.url === "/"}
                       className="hover:bg-sidebar-accent/50 transition-colors"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      onClick={() => setOpenMobile(false)}
                     >
                       <item.icon className="mr-2 h-4 w-4 shrink-0" />
                       {!collapsed && <span>{item.title}</span>}
