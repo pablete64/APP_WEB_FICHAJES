@@ -16,7 +16,6 @@ const adminItems = [
   { title: "Proyectos", url: "/admin/projects", icon: FolderKanban },
   { title: "Tareas", url: "/tasks", icon: ListTodo },
   { title: "Gestión de Fichajes", url: "/admin/management", icon: Settings2 },
-  { title: "Informes", url: "/admin/reports", icon: FileBarChart },
   { title: "Exportar Excel", url: "/admin/export", icon: FileSpreadsheet },
   { title: "Ayuda", url: "/help", icon: HelpCircle },
 ];

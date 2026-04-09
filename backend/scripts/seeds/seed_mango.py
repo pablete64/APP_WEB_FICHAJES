@@ -70,7 +70,6 @@ try:
         {"name": "Jonathan Moral", "role": "MONTADORES", "user": "jonathanmor"},
         {"name": "Antonio Valverde", "role": "PROYECTISTAS MECANICOS", "user": "antonioval"},
         {"name": "Alberto Hernandez", "role": "PROYECTISTAS ELECTRICOS", "user": "albertoher"},
-        {"name": "Gemma Piñol", "role": "PROGRAMADORES", "user": "gemmapin"},
         {"name": "Antonio Silva", "role": "MONTADORES", "user": "antoniosil"},
         {"name": "Arnau Anillo", "role": "PROYECTISTAS MECANICOS", "user": "arnauani"},
         {"name": "Xavier Castillo", "role": "PROYECTISTAS ELECTRICOS", "user": "xaviercas"},

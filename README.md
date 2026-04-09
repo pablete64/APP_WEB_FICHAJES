@@ -58,33 +58,31 @@ Una vez que arranques el script `./start_all.sh` y abras `http://localhost`, pue
 ### 👑 Panel de Administración
 *Control total sobre proyectos, creación de usuarios, reportes y exportación.*
 
-| Usuario | Contraseña | Nombre       | Rol        |
+| Usuario | Contraseña | Nombre | Rol |
 |---------|------------|--------------|------------|
-| `ADMIN` | `admin123` | Super Admin  | Admin      |
+| `ADMIN` | `admin123` | Super Admin | Admin |
+| `GPinol` | `GP_rk.92#Xp26_!` | Gemma Pinol | Admin |
+| `ESoriano` | `ES_rk.47*Zs18_?` | Ernesto Soriano | Admin |
+| `CMartinez` | `CM_rk.63+Lm99_$` | Cristian Martinez | Admin |
+| `PCabaleiro` | `PC_rk.15&Vr34_#` | Pablo Cabaleiro | Admin |
 
 ### 👷 Empleados Reales (seed_mango.py — proyecto MANGO / PRJ-002)
 *Contraseña por defecto: `1234` para todos.*
 
-| Usuario | Contraseña | Nombre           | Rol                      |
+| Usuario | Contraseña | Nombre | Rol |
 |---------|------------|------------------|--------------------------|
-| `1001`  | `1234`     | Antonio Merino   | Proyectistas Mecánicos   |
-| `1002`  | `1234`     | Gemma            | Proyectistas Eléctricos  |
-| `1003`  | `1234`     | Antonio Silva    | Programadores            |
-| `1004`  | `1234`     | Ernesto Soriano  | Proyectistas Mecánicos   |
-| `1005`  | `1234`     | Kevin Soriano    | Proyectistas Eléctricos  |
-| `1006`  | `1234`     | Pablo Cabaleiro  | Programadores            |
-| `1007`  | `1234`     | CATHAYSA         | Montadores               |
-| `1008`  | `1234`     | Arnau            | Montadores               |
+| `manolosal` | `1234` | Manolo Salamanca | Proyectistas Mecánicos |
+| `albertorey` | `1234` | Alberto Reyes | Proyectistas Eléctricos |
+| `franciscorey` | `1234` | Francisco Reyes | Programadores |
+| `jonathanmor` | `1234` | Jonathan Moral | Montadores |
+| `antonioval` | `1234` | Antonio Valverde | Proyectistas Mecánicos |
+| `albertoher` | `1234` | Alberto Hernandez | Proyectistas Eléctricos |
+| `antoniosil` | `1234` | Antonio Silva | Montadores |
+| `arnauani` | `1234` | Arnau Anillo | Proyectistas Mecánicos |
+| `xaviercas` | `1234` | Xavier Castillo | Proyectistas Eléctricos |
+| `ivandelo` | `1234` | Ivan de los Rios | Programadores |
+| `mariogar` | `1234` | Mario García | Montadores |
 
-### 👷 Perfiles de Empleado Demo (seed_demo.py)
-*Panel simplificado para registrar horas. Las tareas mostradas dependen de los permisos de su Rol.*
-
-| Usuario   | Contraseña | Nombre           | Rol (Global)             |
-|-----------|------------|------------------|--------------------------|
-| `USER001` | `user001`  | Empleado Demo 1  | PROYECTISTAS MECANICOS   |
-| `USER002` | `user002`  | Empleado Demo 2  | PROYECTISTAS ELECTRICOS  |
-| `USER003` | `user003`  | Empleado Demo 3  | PROGRAMADORES            |
-| `USER004` | `user004`  | Empleado Demo 4  | MONTADORES               |
 
 > [!NOTE]
 > **Roles Dinámicos**: En esta versión, un usuario puede tener un rol global (como Programador) pero el Administrador puede asignarle un rol distinto para un proyecto específico (ej. Montador en Proyecto X). La plataforma detectará automáticamente qué tareas mostrar según el rol activo en el proyecto seleccionado.

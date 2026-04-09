@@ -19,7 +19,6 @@ import AdminDashboard from "@/pages/admin/AdminDashboard";
 import UsersPage from "@/pages/admin/UsersPage";
 import ProjectsPage from "@/pages/admin/ProjectsPage";
 import TasksPage from "@/pages/admin/TasksPage";
-import ReportsPage from "@/pages/admin/ReportsPage";
 import ExportPage from "@/pages/admin/ExportPage";
 import TimeEntryManagement from "@/pages/admin/TimeEntryManagement";
 
@@ -38,7 +37,6 @@ function AppRoutes() {
             <Route path="/" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<UsersPage />} />
             <Route path="/admin/projects" element={<ProjectsPage />} />
-            <Route path="/admin/reports" element={<ReportsPage />} />
             <Route path="/admin/export" element={<ExportPage />} />
             <Route path="/admin/management" element={<TimeEntryManagement />} />
           </>
