@@ -19,7 +19,9 @@ def get_analytics_summary(db: Session, **filters) -> dict:
         TimeEntry.trip_type,
         TimeEntry.meals,
         Project.distance_from_workshop.label("project_distance"),
-        Project.travel_time.label("proj_travel_time")
+        Project.travel_time.label("proj_travel_time"),
+        Project.km_rate.label("km_rate"),
+        Project.daily_allowance_rate.label("daily_allowance_rate")
     ).join(User, TimeEntry.user_id == User.id)\
      .join(Task, TimeEntry.task_id == Task.id)\
      .join(Project, TimeEntry.project_id == Project.id)
@@ -42,9 +44,9 @@ def get_analytics_summary(db: Session, **filters) -> dict:
     task_hrs = {}     # {task: hours}
     daily_sum = {}    # {date: {hours: 0, count: 0}}
     cat_dist = {}     # {cat: hours}
-    logistics = {}    # {user: {personal: 0, company: 0}}
+    logistics = {}    # {user: {personal: 0, company: 0, km_cost: 0.0}}
     travel_by_user = {}  # {user: total_minutes}
-    dietas = {}       # {user: {yes: 0, no: 0}}
+    dietas = {}       # {user: {yes: 0, no: 0, cost: 0.0}}
     skills = {}       # {user: {cat: hours}}
     treemap_raw = {}  # {cat: {task: hours}}
     total_ovt = 0.0
@@ -81,13 +83,18 @@ def get_analytics_summary(db: Session, **filters) -> dict:
         cat_dist[c] = cat_dist.get(c, 0) + h
 
         # 7. Logistics KM
-        if u not in logistics: logistics[u] = {"personal": 0, "company": 0}
+        if u not in logistics: logistics[u] = {"personal": 0, "company": 0, "km_cost": 0.0}
+        
+        dist = float(e.project_distance or 0)
+        km_rate = float(e.km_rate or 0)
+        
         if e.vehicle_type in ("personal", "particular"):
             mult = 2.0 if e.trip_type == "round" else 1.0
-            logistics[u]["personal"] += float(e.project_distance or 0) * mult
+            logistics[u]["personal"] += dist * mult
+            logistics[u]["km_cost"] += (dist * mult) * km_rate
         elif e.vehicle_type in ("company", "empresa"):
              mult = 2.0 if e.trip_type == "round" else 1.0
-             logistics[u]["company"] += float(e.project_distance or 0) * mult
+             logistics[u]["company"] += dist * mult
 
         # 8. Travel time (minutos → acumulado por usuario)
         if e.vehicle_type and e.proj_travel_time:
@@ -100,9 +107,12 @@ def get_analytics_summary(db: Session, **filters) -> dict:
             travel_by_user[u] = travel_by_user.get(u, 0) + mins
 
         # 9. Dietas
-        if u not in dietas: dietas[u] = {"yes": 0, "no": 0}
-        if e.meals is True: dietas[u]["yes"] += 1
-        elif e.meals is False: dietas[u]["no"] += 1
+        if u not in dietas: dietas[u] = {"yes": 0, "no": 0, "cost": 0.0}
+        if e.meals is True: 
+            dietas[u]["yes"] += 1
+            dietas[u]["cost"] += float(e.daily_allowance_rate or 0)
+        elif e.meals is False: 
+            dietas[u]["no"] += 1
 
         # 10. Skills (Radar)
         if u not in skills: skills[u] = {}
@@ -119,12 +129,12 @@ def get_analytics_summary(db: Session, **filters) -> dict:
     formatted_task_totals = sorted([{"name": t, "hours": hrs} for t, hrs in task_hrs.items()], key=lambda x: x["hours"], reverse=True)[:10]
     formatted_daily_summary = [{"date": d, "hours": v["hours"], "count": v["count"]} for d, v in daily_sum.items()]
     formatted_cat_dist = [{"name": c, "value": h} for c, h in cat_dist.items()]
-    formatted_logistics = [{"name": u, "personal_km": v["personal"], "company_km": v["company"]} for u, v in logistics.items()]
+    formatted_logistics = [{"name": u, "personal_km": v["personal"], "company_km": v["company"], "km_cost": v["km_cost"]} for u, v in logistics.items()]
     formatted_travel_hours = sorted(
         [{"name": u, "travel_hours": round(m / 60, 2)} for u, m in travel_by_user.items() if m > 0],
         key=lambda x: x["travel_hours"]
     )
-    formatted_dietas = [{"name": u, "yes": v["yes"], "no": v["no"]} for u, v in dietas.items()]
+    formatted_dietas = [{"name": u, "yes": v["yes"], "no": v["no"], "cost": v["cost"]} for u, v in dietas.items()]
     formatted_skills = []
     for u, cats in skills.items():
         for c, h in cats.items():

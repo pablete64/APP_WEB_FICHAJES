@@ -81,8 +81,8 @@ export default function AllProjectsDashboard({
     return (summary?.logistics_km || [])
       .map((k: any) => {
         const d = summary?.dietas_summary?.find((d: any) => d.name === k.name);
-        const kmCost = Math.round(k.personal_km * 0.19);
-        const dietaCost = Math.round((d?.yes || 0) * 37.4);
+        const kmCost = Math.round(k.km_cost ?? (k.personal_km * 0.19));
+        const dietaCost = Math.round(d?.cost ?? ((d?.yes || 0) * 37.4));
         return { name: k.name, kmCoste: kmCost, dietaCoste: dietaCost, total: kmCost + dietaCost };
       })
       .filter((c: any) => c.total > 0)
@@ -94,7 +94,9 @@ export default function AllProjectsDashboard({
   const totalKm = summary?.logistics_km?.reduce((s: number, r: any) => s + r.personal_km, 0) || 0;
   const totalDietas = summary?.dietas_summary?.reduce((s: number, r: any) => s + r.yes, 0) || 0;
   const totalEntries = summary?.daily_summary?.reduce((s: number, r: any) => s + r.count, 0) || 0;
-  const totalLogCost = Math.round(totalKm * 0.19 + totalDietas * 37.4);
+  const totalKmCost = summary?.logistics_km?.reduce((s: number, r: any) => s + (r.km_cost ?? r.personal_km * 0.19), 0) || 0;
+  const totalDietasCost = summary?.dietas_summary?.reduce((s: number, r: any) => s + (r.cost ?? r.yes * 37.4), 0) || 0;
+  const totalLogCost = Math.round(totalKmCost + totalDietasCost);
   const employeeCount = summary?.user_totals?.length || 0;
   const maxProjHours = Math.max(...projectTotals.map(p => p.hours), 1);
   const meanEmpHours = totalHours / Math.max(1, employeeCount);
@@ -128,7 +130,7 @@ export default function AllProjectsDashboard({
         />
         <KPI label="Fichajes" val={totalEntries.toLocaleString()} unit="" color={C.accent2} sub="Registros totales" />
         <KPI label="Proyectos" val={projectTotals.length} unit="" color={C.catTaller} sub={`de ${projects.length} en el sistema`} />
-        <KPI label="KM Particular" val={totalKm.toLocaleString("es-ES", { maximumFractionDigits: 0 })} unit="km" color={C.amber} sub={`${Math.round(totalKm * 0.19).toLocaleString("es-ES")}€ reembolso`} />
+        <KPI label="KM Particular" val={totalKm.toLocaleString("es-ES", { maximumFractionDigits: 0 })} unit="km" color={C.amber} sub={`${Math.round(totalKmCost).toLocaleString("es-ES")}€ reembolso`} />
         <KPI label="Coste Logístico" val={totalLogCost.toLocaleString("es-ES")} unit="€" color={C.red} sub={`${totalDietas} dietas`} />
       </div>
 
@@ -262,7 +264,7 @@ export default function AllProjectsDashboard({
       </div>
 
       {/* 06 – Logistic cost */}
-      <Section num="06" title="Coste Logístico por Empleado" sub="Reembolso KM (0,19€/km) + Dietas (37,40€/día)." badge="COSTE" badgeColor={C.red} />
+      <Section num="06" title="Coste Logístico por Empleado" sub="Reembolso KM y Dietas ajustables por proyecto." badge="COSTE" badgeColor={C.red} />
       <CustomCard>
         {logisticCost.length > 0 ? (
           <>
@@ -281,8 +283,8 @@ export default function AllProjectsDashboard({
             </ResponsiveContainer>
             <div style={{ marginTop: 12, display: "flex", gap: 12, flexWrap: "wrap" }}>
               {[
-                ["Reembolso KM", `${Math.round(totalKm * 0.19).toLocaleString("es-ES")}€`, C.amber, "#fffbeb", "#fde68a"],
-                ["Coste Dietas", `${Math.round(totalDietas * 37.4).toLocaleString("es-ES")}€`, C.catTaller, "#f0fdfa", "#99f6e4"],
+                ["Reembolso KM", `${Math.round(totalKmCost).toLocaleString("es-ES")}€`, C.amber, "#fffbeb", "#fde68a"],
+                ["Coste Dietas", `${Math.round(totalDietasCost).toLocaleString("es-ES")}€`, C.catTaller, "#f0fdfa", "#99f6e4"],
                 ["Total Logístico", `${totalLogCost.toLocaleString("es-ES")}€`, C.red, "#fef2f2", "#fecaca"],
               ].map(([label, val, color, bg, border]) => (
                 <div key={label as string} style={{ flex: 1, textAlign: "center", padding: "10px 14px", background: bg as string, borderRadius: 10, border: `1px solid ${border}` }}>

@@ -46,6 +46,8 @@ def create_project(db: Session, project_in: ProjectCreate) -> Project:
         location=project_in.location,
         distance_from_workshop=project_in.distance_from_workshop,
         travel_time=(project_in.travel_time or 0) * 2, # x2 para ida+vuelta
+        km_rate=project_in.km_rate,
+        daily_allowance_rate=project_in.daily_allowance_rate,
         start_date=project_in.start_date,
         type=project_in.type
     )

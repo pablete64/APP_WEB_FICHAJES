@@ -13,6 +13,8 @@ export interface ProjectCreate {
     travel_time?: number; // minutos de ida (el backend lo multiplica x2)
     start_date: string;
     type: string;
+    km_rate?: number;
+    daily_allowance_rate?: number;
     assigned_users: ProjectUserAssignment[];
 }
 
@@ -26,6 +28,8 @@ export interface ProjectResponse {
     start_date: string;
     type: string;
     is_active: boolean;
+    km_rate: number;
+    daily_allowance_rate: number;
     assigned_users: ProjectUserAssignment[];
 }
 
