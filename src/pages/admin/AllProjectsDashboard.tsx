@@ -101,6 +101,14 @@ export default function AllProjectsDashboard({
   const maxProjHours = Math.max(...projectTotals.map(p => p.hours), 1);
   const meanEmpHours = totalHours / Math.max(1, employeeCount);
 
+  // Dynamic rates label for subtitle
+  const uniqueKmRates = Array.from(new Set(projects.map(p => p.km_rate).filter(r => r !== undefined)));
+  const uniqueDietRates = Array.from(new Set(projects.map(p => p.daily_allowance_rate).filter(r => r !== undefined)));
+
+  const ratesLabel = (uniqueKmRates.length === 1 && uniqueDietRates.length === 1)
+    ? `(${uniqueKmRates[0]}€/km | ${uniqueDietRates[0]}€/día)`
+    : "Varía según proyecto";
+
   if (isLoading) return (
     <div style={{ padding: "60px 28px", textAlign: "center", color: C.dim }}>
       <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
@@ -264,7 +272,7 @@ export default function AllProjectsDashboard({
       </div>
 
       {/* 06 – Logistic cost */}
-      <Section num="06" title="Coste Logístico por Empleado" sub="Reembolso KM y Dietas ajustables por proyecto." badge="COSTE" badgeColor={C.red} />
+      <Section num="06" title="Coste Logístico por Empleado" sub={`Reembolso KM y Dietas ajustables por proyecto. ${ratesLabel}`} badge="COSTE" badgeColor={C.red} />
       <CustomCard>
         {logisticCost.length > 0 ? (
           <>

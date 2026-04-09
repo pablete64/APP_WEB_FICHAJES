@@ -154,6 +154,12 @@ export default function AdminDashboard() {
   const maxEmpHours = Math.max(...(summary?.user_totals?.map((u: any) => u.hours) || [1]), 1);
 
   const currentProject = projects.find((p: any) => p.id === selectedProjectId);
+  const kmRate = currentProject?.km_rate ?? 0.19;
+  const dietRate = currentProject?.daily_allowance_rate ?? 37.40;
+  const totalKmCost = totalKm * kmRate;
+  const totalDietasCost = totalDietas * dietRate;
+  const totalLogCost = totalKmCost + totalDietasCost;
+
   const projectLabel = currentProject ? `[${currentProject.code}] ${currentProject.name}` : "";
   const periodLabel = startDate || endDate
     ? `${startDate || "∞"} → ${endDate || "∞"}`
@@ -289,8 +295,8 @@ export default function AdminDashboard() {
                 />
                 <KPI label="Fichajes" val={totalEntries.toLocaleString()} unit="" color={C.accent2} sub={`Ø ${(totalEntries / Math.max(1, sortedDailySummary.length)).toFixed(1)} / día`} />
                 <KPI label="Empleados" val={employeeCount} unit="" color={C.green} sub="Con actividad" />
-                <KPI label="KM Particular" val={totalKm.toLocaleString("es-ES", { maximumFractionDigits: 0 })} unit="km" color={C.amber} sub="Reembolsables" />
-                <KPI label="Dietas SÍ" val={totalDietas} unit="" color={C.pink} sub="Solicitadas" />
+                <KPI label="KM Particular" val={totalKm.toLocaleString("es-ES", { maximumFractionDigits: 0 })} unit="km" color={C.amber} sub={`${totalKmCost.toLocaleString("es-ES", { maximumFractionDigits: 1 })}€ (${kmRate}€/km)`} />
+                <KPI label="Coste Logístico" val={Math.round(totalLogCost).toLocaleString("es-ES")} unit="€" color={C.red} sub={`${totalDietas} dietas (${dietRate}€/día)`} />
                 <KPI 
                   label="H. en Viajes" 
                   val={`${Math.floor(totalTravelHours)}h ${Math.round((totalTravelHours % 1) * 60)}m`} 
@@ -473,6 +479,23 @@ export default function AdminDashboard() {
                 </div>
               </CustomCard>
 
+
+              {/* 07 – Logistic detailed cost */}
+              <Section num="07" title="Desglose de Coste Logístico" sub={`Basado en ratios del proyecto: ${kmRate}€/km y ${dietRate}€/día.`} badge="COSTE" badgeColor={C.red} />
+              <CustomCard>
+                <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 6 }}>
+                  {[
+                    ["Reembolso KM", `${totalKmCost.toLocaleString("es-ES", { maximumFractionDigits: 1 })}€`, C.amber, "#fffbeb", "#fde68a"],
+                    ["Coste Dietas", `${totalDietasCost.toLocaleString("es-ES", { maximumFractionDigits: 1 })}€`, C.catTaller, "#f0fdfa", "#99f6e4"],
+                    ["Total Logístico", `${totalLogCost.toLocaleString("es-ES", { maximumFractionDigits: 1 })}€`, C.red, "#fef2f2", "#fecaca"],
+                  ].map(([label, val, color, bg, border]) => (
+                    <div key={label as string} style={{ flex: 1, minWidth: 200, textAlign: "center", padding: "14px", background: bg as string, borderRadius: 10, border: `1px solid ${border}` }}>
+                      <div style={{ fontSize: 10, color: color as string, fontWeight: 700, textTransform: "uppercase", marginBottom: 4 }}>{label}</div>
+                      <div style={{ fontSize: 24, fontWeight: 800, color: color as string }}>{val}</div>
+                    </div>
+                  ))}
+                </div>
+              </CustomCard>
 
               {/* 08 – Dietas */}
               <Section num="08" title="Dietas por Empleado"
