@@ -68,7 +68,6 @@ export default function UsersPage() {
     setEmployeeCode("");
     setName("");
     setHomeLocation("");
-    setRole("");
     setPassword("");
     setAssignedProjects([]);
     setNewProjectId("");
@@ -94,7 +93,7 @@ export default function UsersPage() {
   };
 
   const handleSubmit = () => {
-    if (!name || (!role && !editingUserId)) return;
+    if (!name) return;
     
     if (editingUserId) {
       let finalProjects = [...assignedProjects];
@@ -109,7 +108,7 @@ export default function UsersPage() {
            });
         }
       }
-      const data: any = { name, home_location: homeLocation, role, assigned_projects: finalProjects };
+      const data: any = { name, home_location: homeLocation, assigned_projects: finalProjects };
       if (password) data.password = password;
       updateMutation.mutate({ id: editingUserId, data });
     } else {
@@ -118,7 +117,7 @@ export default function UsersPage() {
         employee_code: employeeCode,
         name,
         home_location: homeLocation,
-        role,
+        role: "PROYECTISTAS MECANICOS", // default role, reassigned via project assignment
         password,
       });
     }
@@ -145,16 +144,6 @@ export default function UsersPage() {
               <Input value={employeeCode} onChange={e => setEmployeeCode(e.target.value)} disabled={!!editingUserId} />
             </div>
             <div><Label>Nombre</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
-            <div><Label>Domicilio</Label><Input value={homeLocation} onChange={e => setHomeLocation(e.target.value)} /></div>
-            <div>
-              <Label>Rol</Label>
-              <Select value={role} onValueChange={setRole}>
-                <SelectTrigger><SelectValue placeholder="Seleccionar rol" /></SelectTrigger>
-                <SelectContent>
-                  {USER_ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
             <div>
               <Label>Contraseña {editingUserId && "(dejar en blanco para no cambiar)"}</Label>
               <Input type="password" value={password} onChange={e => setPassword(e.target.value)} />
@@ -306,7 +295,6 @@ export default function UsersPage() {
               <TableRow>
                 <TableHead>Código</TableHead>
                 <TableHead>Nombre</TableHead>
-                <TableHead>Domicilio</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -320,7 +308,6 @@ export default function UsersPage() {
                       {u.is_admin && <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full font-semibold">Admin</span>}
                     </div>
                   </TableCell>
-                  <TableCell>{u.home_location}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button 

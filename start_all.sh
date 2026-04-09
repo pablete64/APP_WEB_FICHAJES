@@ -15,6 +15,9 @@ echo "⏳ Waiting for backend to be ready (migrations, etc.)..."
 sleep 5
 
 # 3. Seed data
+echo "🔐 Seeding production admin users..."
+docker compose exec backend bash -c "export PYTHONPATH=/app && python scripts/seeds/seed_admins.py"
+
 echo "🌱 Seeding official tasks..."
 docker compose exec backend bash -c "export PYTHONPATH=/app && python scripts/seeds/seed_tasks.py"
 

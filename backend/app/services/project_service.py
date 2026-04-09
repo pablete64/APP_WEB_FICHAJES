@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from fastapi import HTTPException, status
 from typing import List
+from app.models.time_entry import TimeEntry
 
 from app.models.project import Project
 from app.models.project_user import ProjectUser
@@ -64,13 +65,25 @@ def create_project(db: Session, project_in: ProjectCreate) -> Project:
 
 def delete_project(db: Session, project_id: str):
     project = get_project_by_id(db, project_id)
-    if getattr(project, "type", None) == "non-productive" and project.code == "000":
-         raise HTTPException(status_code=403, detail="Cannot delete the default non-productive project")
-    
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
-        
-    project.deleted_at = func.now()
+    if getattr(project, "type", None) == "non-productive" and project.code == "000":
+        raise HTTPException(status_code=403, detail="Cannot delete the default non-productive project")
+
+    now = func.now()
+
+    # 1. Soft-delete all time entries for this project
+    db.query(TimeEntry)\
+      .filter(TimeEntry.project_id == project_id, TimeEntry.deleted_at == None)\
+      .update({"deleted_at": now}, synchronize_session=False)
+
+    # 2. Hard-delete all project-user assignments (users themselves are untouched)
+    db.query(ProjectUser)\
+      .filter(ProjectUser.project_id == project_id)\
+      .delete(synchronize_session=False)
+
+    # 3. Soft-delete the project itself
+    project.deleted_at = now
     db.add(project)
     db.commit()
     return True
