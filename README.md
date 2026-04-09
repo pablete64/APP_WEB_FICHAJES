@@ -26,12 +26,11 @@ Sistema integral de registro horario y gestión de proyectos, diseñado para emp
 
 ## 🚀 Despliegue Rápido (Entorno Demo)
 
-Para ver la aplicación funcionando rápidamente sin configurar bases de datos externas, hemos suministrado un **Script de Auto-arranque** que levanta ambos servidores (Frontend y Backend en memoria) y los llena de datos de prueba.
+Para ver la aplicación funcionando rápidamente, hemos suministrado un **Script de Auto-arranque** que levanta todo el entorno mediante **Docker Compose** (Frontend Nginx, Backend FastAPI y PostgreSQL) y lo pre-carga con datos oficiales y de prueba.
 
 ### Requisitos Previos:
-- Node.js y npm instalados.
-- Python 3.10+ instalado.
-- Dependencias de Python (`backend/venv` con `requirements.txt`).
+- Docker y Docker Compose instalados.
+
 
 ### Ejecución:
 
@@ -42,12 +41,20 @@ Desde la raíz del proyecto, simplemente ejecuta:
 ```
 
 El script se encargará de:
-1. Crear una base de datos local SQLite.
-2. Inyectar (sembrar) los usuarios demo, tareas, proyectos y fichajes horarios aleatorios para rellenar las métricas de los últimos 10 días.
-3. Levantar la API FastAPI en `http://localhost:8000`.
-4. Levantar la UI React en `http://localhost:8080`.
+  1. Crear una base de datos PostgreSQL persistente.
+  2. Inyectar (sembrar) los usuarios oficiales, administradores y datos demo (proyecto MANGO).
+  3. Levantar la aplicación completa (UI y API) en el puerto `80`.
 
-Para detener ambos servidores, simplemente pulsa `Ctrl + C` en esa misma terminal.
+
+Para detener ambos servidores, simplemente pulsa `Ctrl + C` en esa misma terminal o ejecuta `docker compose down`.
+
+---
+
+## 🔗 Enlaces de Acceso (Local)
+- **Frontend**: http://localhost
+- **Documentación API**: http://localhost/api/docs
+- **Salud del Sistema**: http://localhost/api/health
+
 
 ---
 
