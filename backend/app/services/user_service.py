@@ -51,6 +51,13 @@ def delete_user(db: Session, user_id: str, actor_id: str | None = None) -> bool:
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    # Prevenir que los administradores eliminen a otros administradores
+    if user.is_admin and actor_id and actor_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Los administradores no pueden eliminar a otros administradores."
+        )
+
     user.deleted_at = func.now()
     db.add(user)
     
@@ -62,6 +69,13 @@ def update_user(db: Session, user_id: str, user_in: UserUpdate, actor_id: str | 
     db_user = get_user_by_id(db, user_id)
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prevenir que los administradores editen a otros administradores
+    if db_user.is_admin and actor_id and actor_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Los administradores no pueden editar a otros administradores."
+        )
     
     update_data = user_in.model_dump(exclude_unset=True)
     

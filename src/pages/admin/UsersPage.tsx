@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { userService } from "@/services/userService";
+import { useAuth } from "@/contexts/AuthContext";
 import { USER_ROLES } from "@/data/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,13 +10,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Users, Plus, Trash2, Edit } from "lucide-react";
 import { toast } from "sonner";
 
 import { projectService, ProjectResponse } from "@/services/projectService";
 
 export default function UsersPage() {
+  const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
   const { data: users = [] } = useQuery({ queryKey: ["users"], queryFn: userService.getUsers });
   const { data: projects = [] as ProjectResponse[] } = useQuery({ queryKey: ["projects"], queryFn: projectService.getAllProjects });
@@ -260,20 +261,42 @@ export default function UsersPage() {
         {users.map(u => (
           <div key={u.id} className="rounded-lg border bg-card p-4 flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="font-semibold text-sm truncate">{u.name}</p>
+              <div className="flex items-center gap-2">
+                <p className="font-semibold text-sm truncate">{u.name}</p>
+                {u.is_admin && <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full font-semibold">Admin</span>}
+              </div>
               <p className="text-xs text-muted-foreground">{u.employee_code}</p>
             </div>
             <div className="flex gap-1">
-              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => handleOpenEdit(u)}>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-9 w-9" 
+                onClick={() => handleOpenEdit(u)}
+                disabled={u.is_admin && u.id !== currentUser?.id}
+                title={u.is_admin && u.id !== currentUser?.id ? "No puedes editar a otros administradores" : ""}
+              >
                 <Edit className="h-4 w-4 text-primary" />
               </Button>
-              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => deleteMutation.mutate(u.id)}>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-9 w-9" 
+                onClick={() => {
+                  if (window.confirm(`¿Estás seguro de que deseas eliminar a ${u.name}?`)) {
+                    deleteMutation.mutate(u.id);
+                  }
+                }}
+                disabled={u.is_admin}
+                title={u.is_admin ? "No se pueden eliminar administradores" : ""}
+              >
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
             </div>
           </div>
         ))}
       </div>
+
 
       {/* Desktop view */}
       <Card className="hidden md:block">
@@ -291,14 +314,35 @@ export default function UsersPage() {
               {users.map(u => (
                 <TableRow key={u.id}>
                   <TableCell className="font-mono text-xs">{u.employee_code}</TableCell>
-                  <TableCell className="font-medium">{u.name}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {u.name}
+                      {u.is_admin && <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full font-semibold">Admin</span>}
+                    </div>
+                  </TableCell>
                   <TableCell>{u.home_location}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(u)}>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => handleOpenEdit(u)}
+                        disabled={u.is_admin && u.id !== currentUser?.id}
+                        title={u.is_admin && u.id !== currentUser?.id ? "No puedes editar a otros administradores" : ""}
+                      >
                         <Edit className="h-4 w-4 text-primary" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(u.id)}>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => {
+                          if (window.confirm(`¿Estás seguro de que deseas eliminar a ${u.name}?`)) {
+                            deleteMutation.mutate(u.id);
+                          }
+                        }}
+                        disabled={u.is_admin}
+                        title={u.is_admin ? "No se pueden eliminar administradores" : ""}
+                      >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
