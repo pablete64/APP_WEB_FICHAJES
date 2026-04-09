@@ -9,30 +9,49 @@ def seed_default_tasks(db: Session):
     if db.query(Task).first():
         return
         
-    default_tasks = [
-        {"code": "111", "name": "Technical mechanical management", "category": "Mechanical Engineering", "allowed_roles": ["Mechanical Engineers"], "requires_extra_fields": False},
-        {"code": "112", "name": "3D design", "category": "Mechanical Engineering", "allowed_roles": ["Mechanical Engineers"], "requires_extra_fields": False},
-        {"code": "113", "name": "2D design", "category": "Mechanical Engineering", "allowed_roles": ["Mechanical Engineers"], "requires_extra_fields": False},
-        {"code": "114", "name": "Mechanical documentation", "category": "Mechanical Engineering", "allowed_roles": ["Mechanical Engineers"], "requires_extra_fields": False},
-        {"code": "115", "name": "Offer study", "category": "Mechanical Engineering", "allowed_roles": ["Mechanical Engineers"], "requires_extra_fields": False},
-        {"code": "121", "name": "Technical electrical management", "category": "Electrical Engineering", "allowed_roles": ["Electrical Engineers"], "requires_extra_fields": False},
-        {"code": "122", "name": "Electrical design", "category": "Electrical Engineering", "allowed_roles": ["Electrical Engineers"], "requires_extra_fields": False},
-        {"code": "123", "name": "PLC programming offline", "category": "Programmers", "allowed_roles": ["Electrical Engineers", "Programmers"], "requires_extra_fields": False},
-        {"code": "124", "name": "Robot programming offline", "category": "Programmers", "allowed_roles": ["Electrical Engineers", "Programmers"], "requires_extra_fields": False},
-        {"code": "311", "name": "Manufacturing", "category": "Workshop", "allowed_roles": ["Assemblers"], "requires_extra_fields": False},
-        {"code": "312", "name": "Metrology", "category": "Workshop", "allowed_roles": ["Assemblers", "Mechanical Engineers"], "requires_extra_fields": False},
-        {"code": "313", "name": "Assembly and parts preparation", "category": "Workshop", "allowed_roles": ["Assemblers"], "requires_extra_fields": False},
-        {"code": "321", "name": "Electrical cabinets and boxes", "category": "Workshop", "allowed_roles": ["Electrical Engineers", "Assemblers"], "requires_extra_fields": False},
-        {"code": "322", "name": "Electrical assembly and installation", "category": "Workshop", "allowed_roles": ["Electrical Engineers", "Assemblers"], "requires_extra_fields": False},
-        {"code": "411", "name": "Assembly and commissioning at client", "category": "Client", "allowed_roles": ["Mechanical Engineers", "Assemblers"], "requires_extra_fields": True},
-        {"code": "421", "name": "Electrical installation at client", "category": "Client", "allowed_roles": ["Electrical Engineers", "Assemblers"], "requires_extra_fields": True},
-        {"code": "422", "name": "Fluid installation at client", "category": "Client", "allowed_roles": ["Electrical Engineers", "Mechanical Engineers"], "requires_extra_fields": True},
-        {"code": "431", "name": "PLC and software commissioning", "category": "Client", "allowed_roles": ["Electrical Engineers", "Programmers"], "requires_extra_fields": True},
-        {"code": "432", "name": "Robot commissioning", "category": "Client", "allowed_roles": ["Electrical Engineers", "Programmers"], "requires_extra_fields": True},
-        {"code": "433", "name": "Client training", "category": "Client", "allowed_roles": ["Mechanical Engineers", "Electrical Engineers", "Programmers"], "requires_extra_fields": True},
+    all_production_roles = ["PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS", "PROGRAMADORES", "MONTADORES", "Management"]
+    
+    task_catalog = [
+        # --- BLOQUE 100: OFICINA TÉCNICA ---
+        {"code": "111", "name": "Gestión Técnica Mecánica", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "Management"], "requires_extra_fields": False},
+        {"code": "112", "name": "Diseño 3D", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "Management"], "requires_extra_fields": False},
+        {"code": "113", "name": "Diseño 2D", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "Management"], "requires_extra_fields": False},
+        {"code": "114", "name": "Documentación Mecánica", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "Management"], "requires_extra_fields": False},
+        {"code": "115", "name": "Estudio ofertas", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "Management"], "requires_extra_fields": False},
+        
+        {"code": "121", "name": "Gestión Técnica Eléctrica", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS ELECTRICOS", "Management"], "requires_extra_fields": False},
+        {"code": "122", "name": "Diseño Elécrico", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS ELECTRICOS", "Management"], "requires_extra_fields": False},
+        
+        {"code": "123", "name": "Programación PLC Off-line", "category": "Oficina Técnica", "allowed_roles": ["PROGRAMADORES", "Management"], "requires_extra_fields": False},
+        {"code": "124", "name": "Programación Robot OffLine", "category": "Oficina Técnica", "allowed_roles": ["PROGRAMADORES", "Management"], "requires_extra_fields": False},
+        {"code": "125", "name": "PeM PLC Newval", "category": "Oficina Técnica", "allowed_roles": ["PROGRAMADORES", "Management"], "requires_extra_fields": False},
+        {"code": "126", "name": "PeM Robot Newval", "category": "Oficina Técnica", "allowed_roles": ["PROGRAMADORES", "Management"], "requires_extra_fields": False},
+        {"code": "127", "name": "Doc. Eléctrica y Manuales", "category": "Oficina Técnica", "allowed_roles": ["PROGRAMADORES", "Management"], "requires_extra_fields": False},
+
+        # --- BLOQUE 200: MATERIALES (Comunes de producción) ---
+        {"code": "211", "name": "Comerciales Mecánicos (€)", "category": "Materiales", "allowed_roles": all_production_roles, "requires_extra_fields": False},
+        {"code": "212", "name": "Materia Prima (€)", "category": "Materiales", "allowed_roles": all_production_roles, "requires_extra_fields": False},
+        {"code": "221", "name": "Comerciales Eléctricos (€)", "category": "Materiales", "allowed_roles": all_production_roles, "requires_extra_fields": False},
+        {"code": "222", "name": "Comerciales Fluidos (€)", "category": "Materiales", "allowed_roles": all_production_roles, "requires_extra_fields": False},
+
+        # --- BLOQUE 300: TALLER NEWVAL ---
+        {"code": "311", "name": "Fabricación", "category": "Taller Newval", "allowed_roles": all_production_roles, "requires_extra_fields": False},
+        {"code": "312", "name": "Metrología", "category": "Taller Newval", "allowed_roles": all_production_roles, "requires_extra_fields": False},
+        {"code": "313", "name": "Montaje y PaP", "category": "Taller Newval", "allowed_roles": ["MONTADORES", "Management"], "requires_extra_fields": False},
+        {"code": "321", "name": "Armarios y cajas", "category": "Taller Newval", "allowed_roles": ["MONTADORES", "Management"], "requires_extra_fields": False},
+        {"code": "322", "name": "Montaje e inst. Eléctrica", "category": "Taller Newval", "allowed_roles": ["MONTADORES", "Management"], "requires_extra_fields": False},
+
+        # --- BLOQUE 400: PLANTA CLIENTE ---
+        {"code": "411", "name": "Montaje y PeM Cliente", "category": "Planta Cliente", "allowed_roles": ["MONTADORES", "Management"], "requires_extra_fields": True},
+        {"code": "421", "name": "Montaje e Inst. Elec. PeM Cli", "category": "Planta Cliente", "allowed_roles": ["MONTADORES", "Management"], "requires_extra_fields": True},
+        {"code": "422", "name": "Montaje e Inst. Flu.PeM Client", "category": "Planta Cliente", "allowed_roles": ["MONTADORES", "Management"], "requires_extra_fields": True},
+        
+        {"code": "431", "name": "PeM y Soft Cliente", "category": "Planta Cliente", "allowed_roles": ["PROGRAMADORES", "Management"], "requires_extra_fields": True},
+        {"code": "432", "name": "PeM Robot Clie", "category": "Planta Cliente", "allowed_roles": ["PROGRAMADORES", "Management"], "requires_extra_fields": True},
+        {"code": "433", "name": "Formación PeM Cliente", "category": "Planta Cliente", "allowed_roles": ["PROGRAMADORES", "Management"], "requires_extra_fields": True},
     ]
     
-    for t in default_tasks:
+    for t in task_catalog:
         db_task = Task(**t)
         db.add(db_task)
     db.commit()

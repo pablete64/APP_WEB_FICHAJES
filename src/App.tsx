@@ -38,7 +38,6 @@ function AppRoutes() {
             <Route path="/" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<UsersPage />} />
             <Route path="/admin/projects" element={<ProjectsPage />} />
-            <Route path="/admin/tasks" element={<TasksPage />} />
             <Route path="/admin/reports" element={<ReportsPage />} />
             <Route path="/admin/export" element={<ExportPage />} />
             <Route path="/admin/management" element={<TimeEntryManagement />} />
@@ -51,6 +50,7 @@ function AppRoutes() {
             <Route path="/statistics" element={<StatisticsPage />} />
           </>
         )}
+        <Route path="/tasks" element={<TasksPage />} />
         <Route path="/help" element={<HelpPage />} />
         <Route path="*" element={<div className="text-center py-12 text-muted-foreground">Página no encontrada</div>} />
       </Routes>

@@ -13,6 +13,8 @@ class Project(Base):
     location = Column(String(255), nullable=True)
     distance_from_workshop = Column(Numeric(8, 2), default=0.0)
     travel_time = Column(Integer, default=0, nullable=True) # tiempo total ida+vuelta (minutos)
+    km_rate = Column(Numeric(8, 2), default=0.19)
+    daily_allowance_rate = Column(Numeric(8, 2), default=37.40)
     start_date = Column(Date, nullable=False)
     type = Column(String(20), nullable=False)
     is_active = Column(Boolean, default=True)

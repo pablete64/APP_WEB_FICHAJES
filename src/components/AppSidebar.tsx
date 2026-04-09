@@ -14,7 +14,7 @@ const adminItems = [
   { title: "Panel", url: "/", icon: LayoutDashboard },
   { title: "Usuarios", url: "/admin/users", icon: Users },
   { title: "Proyectos", url: "/admin/projects", icon: FolderKanban },
-  { title: "Tareas", url: "/admin/tasks", icon: ListTodo },
+  { title: "Tareas", url: "/tasks", icon: ListTodo },
   { title: "Gestión de Fichajes", url: "/admin/management", icon: Settings2 },
   { title: "Informes", url: "/admin/reports", icon: FileBarChart },
   { title: "Exportar Excel", url: "/admin/export", icon: FileSpreadsheet },
@@ -26,6 +26,7 @@ const userItems = [
   { title: "Mis Proyectos", url: "/my-projects", icon: Briefcase },
   { title: "Historial", url: "/history", icon: History },
   { title: "Estadísticas", url: "/statistics", icon: BarChart3 },
+  { title: "Tareas", url: "/tasks", icon: ListTodo },
   { title: "Ayuda", url: "/help", icon: HelpCircle },
 ];
 
