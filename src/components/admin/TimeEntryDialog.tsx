@@ -224,6 +224,16 @@ export function TimeEntryDialog({
                     <div className="border-t pt-4">
                         <h4 className="text-sm font-medium mb-4">Campos Adicionales (Desplazamiento/Dietas)</h4>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2 flex flex-col justify-end">
+                                <div className="flex items-center space-x-2 py-2">
+                                    <Switch
+                                        id="meals"
+                                        checked={formData.meals}
+                                        onCheckedChange={(val) => setFormData({ ...formData, meals: val })}
+                                    />
+                                    <Label htmlFor="meals" className="cursor-pointer font-bold text-primary">Cobrar Dieta</Label>
+                                </div>
+                            </div>
                             <div className="space-y-2">
                                 <Label>Vehículo</Label>
                                 <Select
@@ -247,6 +257,27 @@ export function TimeEntryDialog({
                             </div>
                         </div>
 
+                        {formData.meals && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                                <div className="space-y-2 bg-primary/5 p-3 rounded-lg border border-primary/20 shadow-sm">
+                                    <Label className="text-xs font-bold uppercase text-primary">
+                                        Importe Ticket Dieta (€)
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="0.00"
+                                        className="bg-background font-bold text-lg"
+                                        value={(formData as any).meal_ticket_amount ?? ""}
+                                        onChange={(e) => setFormData({ ...formData, meal_ticket_amount: e.target.value === "" ? undefined : parseFloat(e.target.value) } as any)}
+                                    />
+                                    <p className="text-[10px] text-muted-foreground italic">Verifica el ticket adjunto antes de confirmar.</p>
+                                </div>
+                                <div className="hidden sm:block"></div> {/* Spacer */}
+                            </div>
+                        )}
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                             <div className="space-y-2">
                                 <Label>Origen (Municipio/CP)</Label>
@@ -256,38 +287,7 @@ export function TimeEntryDialog({
                                     onChange={(e) => setFormData({ ...formData, distance_origin: e.target.value })}
                                 />
                             </div>
-                            <div className="space-y-2 flex flex-col justify-end">
-                                <div className="flex items-center space-x-2 py-2">
-                                    <Switch
-                                        id="meals"
-                                        checked={formData.meals}
-                                        onCheckedChange={(val) => setFormData({ ...formData, meals: val })}
-                                    />
-                                    <Label htmlFor="meals" className="cursor-pointer">Cobrar Dieta</Label>
-                                </div>
-                            </div>
                         </div>
-
-                        {formData.meals && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-                                <div className="hidden sm:block"></div> {/* Spacer */}
-                                <div className="space-y-2 bg-primary/5 p-3 rounded-lg border border-primary/10">
-                                    <Label className="text-xs font-bold uppercase text-primary">
-                                        Importe Ticket Dieta (€)
-                                    </Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        placeholder="0.00"
-                                        className="bg-background font-semibold"
-                                        value={(formData as any).meal_ticket_amount ?? ""}
-                                        onChange={(e) => setFormData({ ...formData, meal_ticket_amount: e.target.value === "" ? undefined : parseFloat(e.target.value) } as any)}
-                                    />
-                                    <p className="text-[10px] text-muted-foreground">Introduce el importe exacto del ticket adjunto.</p>
-                                </div>
-                            </div>
-                        )}
 
                         <div className="grid grid-cols-1 gap-4 mt-4 pt-4 border-t">
                             <div className="space-y-2">
