@@ -82,7 +82,7 @@ export default function AllProjectsDashboard({
       .map((k: any) => {
         const d = summary?.dietas_summary?.find((d: any) => d.name === k.name);
         const kmCost = Math.round(k.km_cost ?? (k.personal_km * 0.19));
-        const dietaCost = Math.round(d?.cost ?? ((d?.yes || 0) * 37.4));
+        const dietaCost = Math.round(d?.cost ?? 0);
         return { name: k.name, kmCoste: kmCost, dietaCoste: dietaCost, total: kmCost + dietaCost };
       })
       .filter((c: any) => c.total > 0)
@@ -95,7 +95,7 @@ export default function AllProjectsDashboard({
   const totalDietas = summary?.dietas_summary?.reduce((s: number, r: any) => s + r.yes, 0) || 0;
   const totalEntries = summary?.daily_summary?.reduce((s: number, r: any) => s + r.count, 0) || 0;
   const totalKmCost = summary?.logistics_km?.reduce((s: number, r: any) => s + (r.km_cost ?? r.personal_km * 0.19), 0) || 0;
-  const totalDietasCost = summary?.dietas_summary?.reduce((s: number, r: any) => s + (r.cost ?? r.yes * 37.4), 0) || 0;
+  const totalDietasCost = summary?.dietas_summary?.reduce((s: number, r: any) => s + (r.cost ?? 0), 0) || 0;
   const totalLogCost = Math.round(totalKmCost + totalDietasCost);
   const employeeCount = summary?.user_totals?.length || 0;
   const maxProjHours = Math.max(...projectTotals.map(p => p.hours), 1);
@@ -105,9 +105,9 @@ export default function AllProjectsDashboard({
   const uniqueKmRates = Array.from(new Set(projects.map(p => p.km_rate).filter(r => r !== undefined)));
   const uniqueDietRates = Array.from(new Set(projects.map(p => p.daily_allowance_rate).filter(r => r !== undefined)));
 
-  const ratesLabel = (uniqueKmRates.length === 1 && uniqueDietRates.length === 1)
-    ? `(${uniqueKmRates[0]}€/km | ${uniqueDietRates[0]}€/día)`
-    : "Varía según proyecto";
+  const ratesLabel = (uniqueKmRates.length === 1)
+    ? `(${uniqueKmRates[0]}€/km | Tickets adjuntos)`
+    : "Varios ratios KM | Tickets adjuntos";
 
   if (isLoading) return (
     <div style={{ padding: "60px 28px", textAlign: "center", color: C.dim }}>

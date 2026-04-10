@@ -66,7 +66,6 @@ export default function ProjectsPage() {
   const [distance, setDistance] = useState("0");
   const [travelTime, setTravelTime] = useState("0");
   const [kmRate, setKmRate] = useState("0.19");
-  const [dailyAllowanceRate, setDailyAllowanceRate] = useState("37.40");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [assignAll, setAssignAll] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<{user_id: string, role: string}[]>([]);
@@ -75,7 +74,7 @@ export default function ProjectsPage() {
   const resetForm = () => {
     setEditingProjectId(null);
     setName(""); setCode(""); setLocation(""); setDistance("0"); setTravelTime("0");
-    setKmRate("0.19"); setDailyAllowanceRate("37.40");
+    setKmRate("0.19");
     setStartDate(new Date().toISOString().split("T")[0]);
     setSelectedUsers([]); setAssignAll(false); setProjectType("standard");
   };
@@ -96,7 +95,6 @@ export default function ProjectsPage() {
       distance_from_workshop: parseFloat(distance) || 0,
       travel_time: parseInt(travelTime) || 0,
       km_rate: parseFloat(kmRate) || 0,
-      daily_allowance_rate: parseFloat(dailyAllowanceRate) || 0,
       start_date: startDate,
       assigned_users: assignAll ? nonAdminUsers.map((u: any) => ({ user_id: u.id, role: u.role })) : selectedUsers,
       type: projectType,
@@ -117,7 +115,6 @@ export default function ProjectsPage() {
     setDistance(p.distance_from_workshop?.toString() || "0");
     setTravelTime(((p.travel_time || 0) / 2).toString()); // Mostrar solo ida
     setKmRate((p.km_rate ?? 0.19).toString());
-    setDailyAllowanceRate((p.daily_allowance_rate ?? 37.40).toString());
     setStartDate(p.start_date);
     setProjectType(p.type);
     setSelectedUsers(p.assigned_users || []);
@@ -174,7 +171,6 @@ export default function ProjectsPage() {
                 <div><Label>Distancia taller (km)</Label><Input type="number" value={distance} onChange={e => setDistance(e.target.value)} /></div>
                 <div><Label>Tiempo trayecto (ida, min)</Label><Input type="number" min="0" value={travelTime} onChange={e => setTravelTime(e.target.value)} /></div>
                 <div><Label>Precio €/KM</Label><Input type="number" step="0.01" min="0" value={kmRate} onChange={e => setKmRate(e.target.value)} /></div>
-                <div><Label>Coste Dieta (€/día)</Label><Input type="number" step="0.01" min="0" value={dailyAllowanceRate} onChange={e => setDailyAllowanceRate(e.target.value)} /></div>
               </div>
               <div><Label>Fecha de inicio</Label><Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} /></div>
               <div className="flex items-center gap-3">

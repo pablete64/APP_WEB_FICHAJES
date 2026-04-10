@@ -18,7 +18,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Loader2 } from "lucide-react";
+import { Loader2, ExternalLink } from "lucide-react";
 import { TimeEntryResponse, TimeEntryCreate } from "@/services/timeEntryService";
 
 interface TimeEntryDialogProps {
@@ -60,8 +60,10 @@ export function TimeEntryDialog({
                 is_holiday: entry.is_holiday || false,
                 vehicle_type: entry.vehicle_type || "",
                 meals: entry.meals || false,
+                meal_ticket_amount: (entry as any).meal_ticket_amount ?? undefined,
                 distance_origin: entry.distance_origin || "",
                 trip_type: entry.trip_type || "round",
+                travel_time: (entry as any).travel_time ?? 0,
             });
         } else {
             setFormData({
@@ -265,7 +267,67 @@ export function TimeEntryDialog({
                                 </div>
                             </div>
                         </div>
+
+                        {/* Admin-only: travel time + ticket amount */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-4 border-t">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-semibold uppercase text-muted-foreground">
+                                    Horas desplazamiento (admin)
+                                </Label>
+                                <Input
+                                    type="number"
+                                    step="0.5"
+                                    min="0"
+                                    placeholder="ej. 1.5"
+                                    value={(formData as any).travel_time ?? ""}
+                                    onChange={(e) => setFormData({ ...formData, travel_time: parseFloat(e.target.value) || 0 } as any)}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-xs font-semibold uppercase text-muted-foreground">
+                                    Importe ticket dieta (€)
+                                </Label>
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="ej. 12.50"
+                                    value={(formData as any).meal_ticket_amount ?? ""}
+                                    onChange={(e) => setFormData({ ...formData, meal_ticket_amount: parseFloat(e.target.value) || undefined } as any)}
+                                />
+                            </div>
+                        </div>
+
+                        {entry && (entry as any).meal_ticket_photo && (
+                            <div className="mt-4 pt-4 border-t space-y-2">
+                                <Label className="text-xs font-semibold uppercase text-muted-foreground italic">
+                                    Documento adjunto: Ticket de Dieta
+                                </Label>
+                                <div className="relative border rounded-md overflow-hidden bg-muted/30 group">
+                                    <img 
+                                        src={(entry as any).meal_ticket_photo} 
+                                        alt="Ticket" 
+                                        className="w-full max-h-60 object-contain mx-auto transition-all group-hover:opacity-90 cursor-zoom-in"
+                                        onClick={() => window.open((entry as any).meal_ticket_photo, '_blank')}
+                                    />
+                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Button 
+                                            variant="secondary" 
+                                            size="icon" 
+                                            className="h-8 w-8 shadow-md"
+                                            onClick={() => window.open((entry as any).meal_ticket_photo, '_blank')}
+                                        >
+                                            <ExternalLink className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <div className="text-[10px] text-center p-1 text-muted-foreground bg-background/50 border-t">
+                                        Haz clic en la imagen para ampliar
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
+
                 </div>
 
                 <DialogFooter className="flex-col sm:flex-row gap-2">

@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { projectService } from "@/services/projectService";
 import { taskService } from "@/services/taskService";
 import { timeEntryService } from "@/services/timeEntryService";
@@ -11,23 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { CheckCircle2, Clock } from "lucide-react";
-
-// Dropdown labels shown to the user.
-// Values use UPPERCASE to match the allowed_roles format stored in the DB task catalog.
-// The filter uses localeCompare (sensitivity:'base') so it also matches Title Case variants.
-const ROLES = [
-  { value: "PROYECTISTAS MECÁNICOS", label: "Proyectistas Mecánicos" },
-  { value: "PROYECTISTAS ELECTRICOS", label: "Proyectistas Eléctricos" },
-  { value: "PROGRAMADORES", label: "Programadores" },
-  { value: "MONTADORES", label: "Montadores" },
-];
+import { CheckCircle2, Clock, Upload, X, Receipt, Car, Info } from "lucide-react";
 
 // Case- and accent-insensitive role comparison
 const rolesMatch = (a: string, b: string) =>
   a.localeCompare(b, "es", { sensitivity: "base" }) === 0;
 
 export default function LogHours() {
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [projectId, setProjectId] = useState("");
@@ -36,8 +27,11 @@ export default function LogHours() {
   const [taskCode, setTaskCode] = useState("");
   const [hours, setHours] = useState("");
   const [vehicleUsed, setVehicleUsed] = useState<string>("empresa");
-  const [mealsAllowance, setMealsAllowance] = useState(false);
-  const [travelTime, setTravelTime] = useState(""); // horas de desplazamiento (solo ida)
+  const [hasMealTicket, setHasMealTicket] = useState(false);
+  const [ticketAmount, setTicketAmount] = useState("");
+  const [ticketFile, setTicketFile] = useState<File | null>(null);
+  const [ticketPreview, setTicketPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: allProjects = [] } = useQuery({
     queryKey: ["myProjects"],
@@ -58,7 +52,12 @@ export default function LogHours() {
     return assignment ? assignment.role : (user.role || "");
   }, [selectedProject, user]);
 
-  // Filter tasks using case- and accent-insensitive role comparison
+  // Travel time from project config (minutes → hours, read-only for user)
+  const projectTravelMinutes: number = (selectedProject as any)?.travel_time ?? 0;
+  const projectTravelHours: string | null = projectTravelMinutes > 0
+    ? (projectTravelMinutes / 60).toFixed(1)
+    : null;
+
   const filteredTasks = useMemo(
     () => roleInProject
       ? tasks
@@ -72,8 +71,8 @@ export default function LogHours() {
   );
 
   const selectedTaskObj = tasks.find(t => t.code === taskCode);
-  // 4XX tasks have requires_extra_fields=true in DB → show transport/meals panel
-  const isClientTask = selectedTaskObj?.requires_extra_fields ?? false;
+  // 4XX tasks have requires_extra_fields=true → show transport/ticket panel
+  const isClientTask: boolean = (selectedTaskObj as any)?.requires_extra_fields ?? false;
 
   const reset = () => {
     setStep(1);
@@ -83,13 +82,50 @@ export default function LogHours() {
     setTaskCode("");
     setHours("");
     setVehicleUsed("empresa");
-    setMealsAllowance(false);
-    setTravelTime("");
+    setHasMealTicket(false);
+    setTicketAmount("");
+    setTicketFile(null);
+    setTicketPreview(null);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setTicketFile(f);
+    setTicketPreview(URL.createObjectURL(f));
   };
 
   const mutation = useMutation({
-    mutationFn: timeEntryService.createTimeEntry,
+    mutationFn: async () => {
+      if (!user || !projectId || !taskCode || !hours) throw new Error("Datos incompletos");
+
+      // 1. Create the time entry (travel_time is 0 — admin sets it later)
+      const entry = await timeEntryService.createTimeEntry({
+        project_id: projectId,
+        task_id: (selectedTaskObj as any)?.id || "",
+        date,
+        is_holiday: isHoliday,
+        hours: parseFloat(hours),
+        overtime_hours: 0,
+        ...(isClientTask && {
+          vehicle_type: vehicleUsed,
+          meals: hasMealTicket,
+          meal_ticket_amount: hasMealTicket && ticketAmount ? parseFloat(ticketAmount) : undefined,
+          distance_origin: "NAVE",
+          trip_type: "round",
+          travel_time: 0,
+        }),
+      });
+
+      // 2. Upload ticket photo if provided
+      if (isClientTask && hasMealTicket && ticketFile && entry.id) {
+        await timeEntryService.uploadTicketPhoto(entry.id, ticketFile);
+      }
+
+      return entry;
+    },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myEntries"] });
       toast.success("¡Horas registradas correctamente!");
       reset();
     },
@@ -97,25 +133,6 @@ export default function LogHours() {
       toast.error(err.message || "Error al registrar horas");
     },
   });
-
-  const handleSubmit = () => {
-    if (!user || !projectId || !taskCode || !hours) return;
-    mutation.mutate({
-      project_id: projectId,
-      task_id: selectedTaskObj?.id || "",
-      date,
-      is_holiday: isHoliday,
-      hours: parseFloat(hours),
-      overtime_hours: 0, // Backend auto-splits hours > 8 into overtime
-      ...(isClientTask && {
-        vehicle_type: vehicleUsed,
-        meals: mealsAllowance,
-        distance_origin: "NAVE",
-        trip_type: "round",  // siempre ida+vuelta; el backend×2 aplica en el tiempo
-        travel_time: travelTime ? parseFloat(travelTime) : 0, // tiempo de IDA (se multiplica ×2 en el export)
-      }),
-    });
-  };
 
   const stepTitles = [
     "Seleccionar Proyecto",
@@ -144,8 +161,8 @@ export default function LogHours() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">
-            {allProjects.length === 0 
-              ? "Sin Proyectos Asignados" 
+            {allProjects.length === 0
+              ? "Sin Proyectos Asignados"
               : `Paso ${step}: ${step === 5 ? "Registro Final" : stepTitles[step - 1]}`}
           </CardTitle>
         </CardHeader>
@@ -165,7 +182,7 @@ export default function LogHours() {
                 <SelectTrigger><SelectValue placeholder="Elige un proyecto" /></SelectTrigger>
                 <SelectContent>
                   {allProjects.map(p => {
-                    const r = p.assigned_users?.find((su: any) => su.user_id === user?.id)?.role || user?.role;
+                    const r = (p as any).assigned_users?.find((su: any) => su.user_id === user?.id)?.role || user?.role;
                     return (
                       <SelectItem key={p.id} value={p.id}>[{p.code}] {p.name} {r ? `(${r})` : ""}</SelectItem>
                     )
@@ -204,7 +221,7 @@ export default function LogHours() {
           {/* ── Step 4: Task ── */}
           {step === 4 && (
             <>
-              {selectedProject?.type === "offer" ? (
+              {(selectedProject as any)?.type === "offer" ? (
                 <div className="p-3 rounded-lg bg-muted text-sm">
                   Selección automática: <strong>115 – Estudio de oferta</strong>
                   {(() => { if (!taskCode) setTaskCode("115"); return null; })()}
@@ -225,7 +242,7 @@ export default function LogHours() {
                   </Select>
                   {filteredTasks.length === 0 && roleInProject && (
                     <p className="text-xs text-muted-foreground">
-                      No hay tareas disponibles para tu rol (**{roleInProject}**).
+                      No hay tareas disponibles para tu rol ({roleInProject}).
                     </p>
                   )}
                 </>
@@ -237,7 +254,7 @@ export default function LogHours() {
             </>
           )}
 
-          {/* ── Step 5: Hours + 4XX transport fields ── */}
+          {/* ── Step 5: Hours + 4XX transport/ticket fields ── */}
           {step === 5 && (
             <>
               <div>
@@ -249,24 +266,36 @@ export default function LogHours() {
               </div>
 
               {isClientTask && (
-                <div className="space-y-3 p-3 rounded-lg border bg-muted/50">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                <div className="space-y-4 p-4 rounded-lg border bg-muted/50">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Detalles desplazamiento — Planta Cliente (4XX)
                   </p>
 
-                  {/* Dieta */}
-                  <div className="flex items-center gap-3">
-                    <Switch checked={mealsAllowance} onCheckedChange={setMealsAllowance} id="meals" />
-                    <Label htmlFor="meals">¿Hubo dieta de comida?</Label>
-                  </div>
+                  {/* Project travel time — read-only info */}
+                  {projectTravelHours ? (
+                    <div className="flex items-start gap-2 p-3 rounded-md bg-background border text-sm">
+                      <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-medium">Tiempo de desplazamiento del proyecto:</span>
+                        {" "}<strong>{projectTravelHours}h</strong> (ida + vuelta)
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Este tiempo es gestionado por el área de administración.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 p-3 rounded-md bg-background border text-sm text-muted-foreground">
+                      <Info className="h-4 w-4 shrink-0" />
+                      El tiempo de desplazamiento será registrado por administración.
+                    </div>
+                  )}
 
-                  {/* Vehículo */}
+                  {/* Vehicle */}
                   <div>
-                    <Label>Vehículo utilizado</Label>
-                    <Select
-                      value={vehicleUsed}
-                      onValueChange={setVehicleUsed}
-                    >
+                    <Label className="flex items-center gap-1.5 mb-1.5">
+                      <Car className="h-3.5 w-3.5" />Vehículo utilizado
+                    </Label>
+                    <Select value={vehicleUsed} onValueChange={setVehicleUsed}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="coche_personal">Coche particular</SelectItem>
@@ -276,30 +305,90 @@ export default function LogHours() {
                     </Select>
                   </div>
 
-                  {/* Horas de desplazamiento */}
-                  <div>
-                    <Label>Horas de desplazamiento (trayecto)</Label>
-                    <Input
-                      type="number" min="0" max="12" step="0.5"
-                      value={travelTime}
-                      onChange={e => setTravelTime(e.target.value)}
-                      placeholder="ej. 1.5"
-                    />
-                    {travelTime && hours && parseFloat(travelTime) > 0 && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Horas netas efectivas: <strong>{(parseFloat(hours) - parseFloat(travelTime) * 2).toFixed(1)}h</strong>
-                        {" "}<span className="opacity-60">(trayecto: {parseFloat(travelTime).toFixed(1)}h ida × 2)</span>
-                      </p>
+                  {/* Meal ticket section */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={hasMealTicket}
+                        onCheckedChange={(v) => {
+                          setHasMealTicket(v);
+                          if (!v) { setTicketAmount(""); setTicketFile(null); setTicketPreview(null); }
+                        }}
+                        id="meals"
+                      />
+                      <Label htmlFor="meals" className="flex items-center gap-1.5">
+                        <Receipt className="h-3.5 w-3.5" />
+                        ¿Hay ticket de dieta?
+                      </Label>
+                    </div>
+
+                    {hasMealTicket && (
+                      <div className="space-y-3 pl-3 border-l-2 border-primary/30">
+                        <div>
+                          <Label>Importe del ticket (€)</Label>
+                          <Input
+                            type="number" min="0" step="0.01"
+                            value={ticketAmount}
+                            onChange={e => setTicketAmount(e.target.value)}
+                            placeholder="ej. 12.50"
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label>Foto del ticket</Label>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            className="hidden"
+                            onChange={handleFileChange}
+                          />
+                          {ticketPreview ? (
+                            <div className="relative mt-1.5">
+                              <img
+                                src={ticketPreview}
+                                alt="Ticket"
+                                className="w-full max-h-48 object-contain rounded-md border"
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-1 right-1 h-7 w-7 bg-background/80 hover:bg-background"
+                                onClick={() => { setTicketFile(null); setTicketPreview(null); }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="mt-1.5 w-full gap-2"
+                              onClick={() => fileInputRef.current?.click()}
+                            >
+                              <Upload className="h-4 w-4" />
+                              Subir foto del ticket
+                            </Button>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Opcional. Formatos admitidos: JPG, PNG, WebP.
+                          </p>
+                        </div>
+                      </div>
                     )}
                   </div>
-
-                  {/* Tipo de trayecto eliminado: siempre ida+vuelta, el backend aplica ×2 */}
                 </div>
               )}
 
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button variant="outline" onClick={() => setStep(4)} className="flex-1">Atrás</Button>
-                <Button onClick={handleSubmit} disabled={!hours || mutation.isPending} className="flex-1 gap-2">
+                <Button
+                  onClick={() => mutation.mutate()}
+                  disabled={!hours || mutation.isPending}
+                  className="flex-1 gap-2"
+                >
                   <CheckCircle2 className="h-4 w-4" />
                   {mutation.isPending ? "Guardando..." : "Enviar"}
                 </Button>

@@ -17,7 +17,9 @@ class TimeEntry(Base):
     overtime_hours = Column(Numeric(4, 2), default=0.0)
     
     vehicle_type = Column(String(20), nullable=True)
-    meals = Column(Boolean, nullable=True)
+    meals = Column(Boolean, nullable=True)  # True if meal ticket was submitted
+    meal_ticket_amount = Column(Numeric(8, 2), nullable=True)  # Amount on the ticket (€)
+    meal_ticket_photo = Column(String(512), nullable=True)  # Stored file path
     distance_origin = Column(String(20), nullable=True)
     trip_type = Column(String(10), nullable=True) # "to", "from", "round"
     travel_time = Column(Numeric(4, 2), default=0.0, nullable=True)  # Admin-managed travel time (hours)

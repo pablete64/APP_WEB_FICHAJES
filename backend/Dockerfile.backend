@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Create a non-root user and switch to it for better security
-RUN useradd -m appuser && chown -R appuser /app
+RUN useradd -m appuser && mkdir -p /app/uploads/tickets && chown -R appuser /app
 USER appuser
 
 # Expose backend port

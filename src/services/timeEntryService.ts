@@ -9,14 +9,18 @@ export interface TimeEntryCreate {
     is_holiday?: boolean;
     vehicle_type?: string;
     meals?: boolean;
+    meal_ticket_amount?: number;   // € amount from receipt
+    meal_ticket_photo?: string;    // stored file path (set after upload)
     distance_origin?: string;
     trip_type?: string;
+    travel_time?: number;
     user_id?: string;
 }
 
 export interface TimeEntryResponse extends TimeEntryCreate {
     id: string;
     user_id: string;
+    travel_time?: number;
 }
 
 export const timeEntryService = {
@@ -25,6 +29,23 @@ export const timeEntryService = {
             method: 'POST',
             body: JSON.stringify(entry),
         });
+    },
+
+    uploadTicketPhoto: async (entryId: string, file: File): Promise<TimeEntryResponse> => {
+        const form = new FormData();
+        form.append('file', file);
+        const BASE = (import.meta as any).env?.VITE_API_URL ?? '/api';
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
+        const res = await fetch(`${BASE}/time-entries/${entryId}/upload-ticket`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: form,
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.detail || 'Error al subir la foto');
+        }
+        return res.json();
     },
 
     getMyEntries: async (): Promise<TimeEntryResponse[]> => {

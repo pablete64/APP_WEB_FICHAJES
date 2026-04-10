@@ -1,12 +1,17 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
+import os, uuid, shutil
 
 from app.database.session import get_db
 from app.auth.dependencies import get_current_user, require_admin
 from app.models.user import User
+from app.models.time_entry import TimeEntry
 from app.schemas.time_entry import TimeEntryCreate, TimeEntryResponse
 from app.services import time_entry_service
+
+UPLOADS_DIR = "/app/uploads/tickets"
+os.makedirs(UPLOADS_DIR, exist_ok=True)
 
 router = APIRouter(prefix="/time-entries", tags=["Time Entries"])
 
@@ -45,3 +50,34 @@ def delete_time_entry(entry_id: str, db: Session = Depends(get_db), current_user
     """Borrar un impute de horas físico. Solo administrador."""
     time_entry_service.delete_entry(db, entry_id, actor_id=current_user.id)
     return None
+
+@router.post("/{entry_id}/upload-ticket", response_model=TimeEntryResponse)
+def upload_ticket_photo(
+    entry_id: str,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Sube la foto del ticket de dieta y la asocia al fichaje."""
+    entry = db.query(TimeEntry).filter(TimeEntry.id == entry_id, TimeEntry.deleted_at == None).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Fichaje no encontrado")
+    # Only the owner or an admin can upload
+    if entry.user_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Sin permiso")
+
+    # Validate file type
+    allowed = {"image/jpeg", "image/png", "image/webp", "image/heic"}
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="Formato no válido. Usa JPG, PNG o WebP.")
+
+    ext = os.path.splitext(file.filename or "")[1] or ".jpg"
+    filename = f"{uuid.uuid4()}{ext}"
+    dest = os.path.join(UPLOADS_DIR, filename)
+    with open(dest, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    entry.meal_ticket_photo = f"/uploads/tickets/{filename}"
+    db.commit()
+    db.refresh(entry)
+    return entry

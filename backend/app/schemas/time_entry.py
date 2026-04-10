@@ -12,6 +12,8 @@ class TimeEntryCreate(BaseModel):
     
     vehicle_type: Optional[str] = None
     meals: Optional[bool] = None
+    meal_ticket_amount: Optional[float] = None   # € amount from ticket
+    meal_ticket_photo: Optional[str] = None      # stored file path (set by upload endpoint)
     distance_origin: Optional[str] = None
     trip_type: Optional[str] = None # "to", "from", "round"
     travel_time: Optional[float] = 0.0  # Admin-managed travel time (hours)

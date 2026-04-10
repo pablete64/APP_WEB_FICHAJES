@@ -5,7 +5,7 @@ import { projectService } from "@/services/projectService";
 import { taskService } from "@/services/taskService";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { History } from "lucide-react";
+import { History, Receipt, ExternalLink } from "lucide-react";
 
 export default function HistoryPage() {
   const { data: rawEntries = [] } = useQuery({ queryKey: ["myEntries"], queryFn: timeEntryService.getMyEntries });
@@ -49,7 +49,26 @@ export default function HistoryPage() {
                 {project ? `[${project.code}] ${project.name}` : "—"}
               </p>
               <p className="text-sm truncate">{task ? `${task.code} – ${task.name}` : "—"}</p>
-              <p className="text-base font-bold text-primary">{e.hours}h</p>
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col">
+                  <p className="text-base font-bold text-primary">{e.hours}h</p>
+                  {e.meal_ticket_amount > 0 && (
+                    <span className="text-[10px] text-muted-foreground font-semibold">
+                      {e.meal_ticket_amount.toFixed(2)}€ Dieta
+                    </span>
+                  )}
+                </div>
+                {e.meal_ticket_photo && (
+                  <a 
+                    href={e.meal_ticket_photo} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 text-xs text-primary hover:underline bg-primary/5 px-2 py-1 rounded"
+                  >
+                    <Receipt className="h-3.5 w-3.5" /> Ver Ticket
+                  </a>
+                )}
+              </div>
             </div>
           );
         })}
@@ -65,6 +84,8 @@ export default function HistoryPage() {
               <TableHead>Tarea</TableHead>
               <TableHead className="text-right">Horas</TableHead>
               <TableHead className="text-right">H. Extra</TableHead>
+              <TableHead className="text-right">Dieta (€)</TableHead>
+              <TableHead className="text-right">Ticket</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -78,12 +99,30 @@ export default function HistoryPage() {
                   <TableCell>{task ? `${task.code} – ${task.name}` : "—"}</TableCell>
                   <TableCell className="text-right">{e.hours}h</TableCell>
                   <TableCell className="text-right">{e.overtime_hours}h</TableCell>
+                  <TableCell className="text-right font-medium text-muted-foreground">
+                    {e.meal_ticket_amount ? `${e.meal_ticket_amount.toFixed(2)}€` : "—"}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {e.meal_ticket_photo ? (
+                      <a 
+                        href={e.meal_ticket_photo} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="inline-flex items-center justify-center p-2 hover:bg-primary/10 rounded-full text-primary"
+                        title="Ver Ticket de Dieta"
+                      >
+                        <Receipt className="h-4 w-4" />
+                      </a>
+                    ) : (
+                      "—"
+                    )}
+                  </TableCell>
                 </TableRow>
               );
             })}
             {entries.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-12">Aún no hay registros</TableCell>
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-12">Aún no hay registros</TableCell>
               </TableRow>
             )}
           </TableBody>

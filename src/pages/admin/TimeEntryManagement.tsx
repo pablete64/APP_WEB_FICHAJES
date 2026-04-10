@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
-    Settings2, Trash2, Edit2, Loader2, AlertCircle, Plus
+    Settings2, Trash2, Edit2, Loader2, AlertCircle, Plus, Receipt, ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -145,7 +145,21 @@ export default function TimeEntryManagement() {
                                     {project ? `[${project.code}] ${project.name}` : "—"}
                                 </p>
                                 <p className="text-sm truncate">{task ? `${task.code} – ${task.name}` : "—"}</p>
-                                <div className="flex justify-end gap-2 pt-1">
+                                <div className="flex items-center justify-between pt-1">
+                                    <div className="flex gap-2">
+                                        {e.meal_ticket_photo && (
+                                            <a 
+                                                href={e.meal_ticket_photo} 
+                                                target="_blank" 
+                                                rel="noreferrer"
+                                                className="flex items-center gap-1 text-xs text-primary hover:underline"
+                                            >
+                                                <Receipt className="h-3.5 w-3.5" /> Ticket
+                                            </a>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-2">
+
                                     <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleEdit(e)}>
                                         <Edit2 className="h-3.5 w-3.5" />Editar
                                     </Button>
@@ -168,6 +182,7 @@ export default function TimeEntryManagement() {
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -209,8 +224,21 @@ export default function TimeEntryManagement() {
                                         </TableCell>
                                         <TableCell>{task?.code} - {task?.name}</TableCell>
                                         <TableCell className={`text-right ${isOvertime ? "text-destructive font-bold" : ""}`}>
-                                            {e.hours}h
-                                            {isOvertime && <AlertCircle className="h-3 w-3 inline ml-1 align-middle" />}
+                                            <div className="flex flex-col items-end">
+                                                <span>{e.hours}h</span>
+                                                {isOvertime && <span className="text-[10px] flex items-center gap-0.5"><AlertCircle className="h-2.5 w-2.5" /> Extra</span>}
+                                                {e.meal_ticket_photo && (
+                                                    <a 
+                                                        href={e.meal_ticket_photo} 
+                                                        target="_blank" 
+                                                        rel="noreferrer"
+                                                        className="mt-1 text-primary hover:text-primary/80"
+                                                        title="Ver Ticket"
+                                                    >
+                                                        <Receipt className="h-4 w-4" />
+                                                    </a>
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">

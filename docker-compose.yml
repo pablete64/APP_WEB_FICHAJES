@@ -32,9 +32,10 @@ services:
       - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
       - ALLOWED_ORIGINS=http://reker.ovh,https://reker.ovh,http://51.91.11.49,http://localhost
-    # Backend is proxied by frontend-nginx, no need to expose 8000 to the internet
     expose:
       - "8000"
+    volumes:
+      - uploads_data:/app/uploads
 
   frontend:
     build:
@@ -48,6 +49,9 @@ services:
       - backend
     ports:
       - "80:80"
+    volumes:
+      - uploads_data:/app/uploads
 
 volumes:
   postgres_data:
+  uploads_data:

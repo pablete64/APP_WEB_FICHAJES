@@ -18,6 +18,7 @@ def get_analytics_summary(db: Session, **filters) -> dict:
         TimeEntry.distance_origin,
         TimeEntry.trip_type,
         TimeEntry.meals,
+        TimeEntry.meal_ticket_amount,
         Project.distance_from_workshop.label("project_distance"),
         Project.travel_time.label("proj_travel_time"),
         Project.km_rate.label("km_rate"),
@@ -110,7 +111,12 @@ def get_analytics_summary(db: Session, **filters) -> dict:
         if u not in dietas: dietas[u] = {"yes": 0, "no": 0, "cost": 0.0}
         if e.meals is True: 
             dietas[u]["yes"] += 1
-            dietas[u]["cost"] += float(e.daily_allowance_rate or 0)
+            # Prioritize ticket amount if present, fallback to fixed project rate
+            ticket_amt = float(e.meal_ticket_amount or 0)
+            if ticket_amt > 0:
+                dietas[u]["cost"] += ticket_amt
+            else:
+                dietas[u]["cost"] += float(e.daily_allowance_rate or 0)
         elif e.meals is False: 
             dietas[u]["no"] += 1
 
