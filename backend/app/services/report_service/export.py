@@ -12,7 +12,7 @@ from app.models.task import Task
 from .query import apply_filters
 
 def generate_xlsx_export(db: Session, **filters) -> bytes:
-    # 1. Nueva consulta granular: agrupamos por Proyecto, Fecha, Usuario y Tarea
+    # 1. Consulta detallada: obtenemos cada registro individualmente
     query = db.query(
         Project.code.label("project_code"),
         Project.name.label("project_name"),
@@ -27,10 +27,10 @@ def generate_xlsx_export(db: Session, **filters) -> bytes:
         TimeEntry.meals.label("meals"),
         TimeEntry.distance_origin.label("distance_origin"),
         TimeEntry.trip_type.label("trip_type"),
-        func.coalesce(func.sum(TimeEntry.hours), 0).label("effective_hours"),
-        func.coalesce(func.sum(TimeEntry.overtime_hours), 0).label("overtime_hours"),
-        func.coalesce(func.sum(TimeEntry.travel_time), 0).label("travel_time"),
-        func.coalesce(func.sum(TimeEntry.meal_ticket_amount), 0).label("meal_amount")
+        TimeEntry.hours.label("effective_hours"),
+        TimeEntry.overtime_hours.label("overtime_hours"),
+        TimeEntry.travel_time.label("travel_time"),
+        TimeEntry.meal_ticket_amount.label("meal_amount")
     ).join(Project, TimeEntry.project_id == Project.id)\
      .join(Task, TimeEntry.task_id == Task.id)\
      .join(User, TimeEntry.user_id == User.id)
@@ -38,21 +38,7 @@ def generate_xlsx_export(db: Session, **filters) -> bytes:
     query = apply_filters(query, **filters)
     
     # Orden lógico: Proyecto -> Fecha -> Usuario -> Tarea
-    entries = query.group_by(
-        Project.code,
-        Project.name,
-        Project.distance_from_workshop,
-        TimeEntry.date,
-        TimeEntry.is_holiday,
-        User.employee_code,
-        User.name,
-        Task.code,
-        Task.name,
-        TimeEntry.vehicle_type,
-        TimeEntry.meals,
-        TimeEntry.distance_origin,
-        TimeEntry.trip_type
-    ).order_by(Project.code, TimeEntry.date, User.employee_code, Task.code).all()
+    entries = query.order_by(Project.code, TimeEntry.date, User.employee_code, TimeEntry.created_at).all()
 
     # Reestructuramos los datos para enviarlos al generador de la hoja:
     projects_dict = {}

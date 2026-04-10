@@ -223,17 +223,7 @@ export function TimeEntryDialog({
 
                     <div className="border-t pt-4">
                         <h4 className="text-sm font-medium mb-4">Campos Adicionales (Desplazamiento/Dietas)</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-2 flex flex-col justify-end">
-                                <div className="flex items-center space-x-2 py-2">
-                                    <Switch
-                                        id="meals"
-                                        checked={formData.meals}
-                                        onCheckedChange={(val) => setFormData({ ...formData, meals: val })}
-                                    />
-                                    <Label htmlFor="meals" className="cursor-pointer font-bold text-primary">Cobrar Dieta</Label>
-                                </div>
-                            </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                             <div className="space-y-2">
                                 <Label>Vehículo</Label>
                                 <Select
@@ -255,30 +245,19 @@ export function TimeEntryDialog({
                                     </SelectContent>
                                 </Select>
                             </div>
-                        </div>
 
-                        {formData.meals && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-                                <div className="space-y-2 bg-primary/5 p-3 rounded-lg border border-primary/20 shadow-sm">
-                                    <Label className="text-xs font-bold uppercase text-primary">
-                                        Importe Ticket Dieta (€)
-                                    </Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        placeholder="0.00"
-                                        className="bg-background font-bold text-lg"
-                                        value={(formData as any).meal_ticket_amount ?? ""}
-                                        onChange={(e) => setFormData({ ...formData, meal_ticket_amount: e.target.value === "" ? undefined : parseFloat(e.target.value) } as any)}
+                            <div className="space-y-2">
+                                <Label className="invisible hidden sm:block">Dieta</Label>
+                                <div className="flex items-center space-x-2 h-10">
+                                    <Switch
+                                        id="meals"
+                                        checked={formData.meals}
+                                        onCheckedChange={(val) => setFormData({ ...formData, meals: val })}
                                     />
-                                    <p className="text-[10px] text-muted-foreground italic">Verifica el ticket adjunto antes de confirmar.</p>
+                                    <Label htmlFor="meals" className="cursor-pointer font-bold text-primary">Cobrar Dieta</Label>
                                 </div>
-                                <div className="hidden sm:block"></div> {/* Spacer */}
                             </div>
-                        )}
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                             <div className="space-y-2">
                                 <Label>Origen (Municipio/CP)</Label>
                                 <Input
@@ -287,24 +266,44 @@ export function TimeEntryDialog({
                                     onChange={(e) => setFormData({ ...formData, distance_origin: e.target.value })}
                                 />
                             </div>
+
+                            {formData.meals && (
+                                <div className="space-y-2 bg-primary/5 p-3 rounded-lg border border-primary/20 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+                                    <Label className="text-[10px] font-bold uppercase text-primary">
+                                        Importe Ticket Dieta (€)
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        placeholder="0.00"
+                                        className="bg-background font-bold h-8"
+                                        value={(formData as any).meal_ticket_amount ?? ""}
+                                        onChange={(e) => setFormData({ ...formData, meal_ticket_amount: e.target.value === "" ? undefined : parseFloat(e.target.value) } as any)}
+                                    />
+                                    <p className="text-[8px] text-muted-foreground italic">Verifica el ticket adjunto.</p>
+                                </div>
+                            )}
                         </div>
 
-                        <div className="grid grid-cols-1 gap-4 mt-4 pt-4 border-t">
-                            <div className="space-y-2">
-                                <Label className="text-xs font-semibold uppercase text-muted-foreground">
-                                    Horas desplazamiento (admin)
+                        <div className="grid grid-cols-1 gap-4 mt-6 pt-4 border-t">
+                            <div className="space-y-2 opacity-80">
+                                <Label className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-2">
+                                    Tiempo de desplazamiento
+                                    <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded italic normal-case">Dato de Proyecto</span>
                                 </Label>
-                                <Input
-                                    type="number"
-                                    step="0.5"
-                                    min="0"
-                                    placeholder="ej. 1.5"
-                                    value={(formData as any).travel_time ?? ""}
-                                    onChange={(e) => setFormData({ ...formData, travel_time: e.target.value === "" ? 0 : parseFloat(e.target.value) } as any)}
-                                />
-                                <p className="text-[10px] text-muted-foreground italic">Solo ida. El sistema calculará el total (ida+vuelta) automáticamente en los informes.</p>
+                                <div className="flex items-center gap-2 bg-muted/30 p-2 rounded border border-dashed text-sm">
+                                    <span className="font-bold text-blue-600">
+                                        {(() => {
+                                            const p = projects.find(p => p.id === formData.project_id);
+                                            return p?.travel_time ? (p.travel_time / 60).toFixed(2) : "0.00";
+                                        })()}h
+                                    </span>
+                                    <span className="text-muted-foreground text-xs">(Calculado automáticamente para el informe final)</span>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
                         {entry && (entry as any).meal_ticket_photo && (
                             <div className="mt-4 pt-4 border-t space-y-2">
@@ -335,8 +334,6 @@ export function TimeEntryDialog({
                             </div>
                         )}
                     </div>
-
-                </div>
 
                 <DialogFooter className="flex-col sm:flex-row gap-2">
                     <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Cancelar</Button>
