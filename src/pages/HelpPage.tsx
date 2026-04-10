@@ -411,7 +411,7 @@ export default function HelpPage() {
             <li>Los datos se almacenan actualmente en el <strong>almacenamiento local del navegador</strong> (localStorage). Esto significa que los datos persisten en el mismo navegador/dispositivo, pero no se sincronizan entre dispositivos.</li>
             <li>La aplicación es <strong>responsive</strong>: funciona correctamente en pantallas de escritorio, tablet y móvil.</li>
             <li>La contraseña de administrador por defecto es <code className="bg-muted px-1.5 py-0.5 rounded text-xs">admin123</code>.</li>
-            <li>Para un entorno de producción real, se recomienda activar <strong>Lovable Cloud</strong> para tener base de datos centralizada, autenticación segura y sincronización multi-dispositivo.</li>
+            <li>Para un entorno de producción real, se recomienda utilizar un servidor seguro con base de datos centralizada y autenticación profesional.</li>
           </ul>
         </CardContent>
       </Card>
