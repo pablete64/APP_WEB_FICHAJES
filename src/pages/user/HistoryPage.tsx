@@ -69,6 +69,18 @@ export default function HistoryPage() {
                   </a>
                 )}
               </div>
+              {e.vehicle_type && (
+                <div className="flex flex-wrap gap-2 pt-1 border-t mt-2">
+                  <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-600 font-medium">
+                    🚗 {e.vehicle_type.replace("_", " ")}
+                  </span>
+                  {e.travel_time > 0 && (
+                    <span className="text-[10px] bg-blue-50 px-1.5 py-0.5 rounded text-blue-600 font-bold">
+                      ⏱️ {e.travel_time}h viaje
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
@@ -86,6 +98,7 @@ export default function HistoryPage() {
               <TableHead className="text-right">H. Extra</TableHead>
               <TableHead className="text-right">Dieta (€)</TableHead>
               <TableHead className="text-right">Ticket</TableHead>
+              <TableHead className="text-right">Desplazamiento</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -117,12 +130,26 @@ export default function HistoryPage() {
                       "—"
                     )}
                   </TableCell>
+                  <TableCell className="text-right whitespace-nowrap">
+                    {e.vehicle_type ? (
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge variant="outline" className="text-[10px] capitalize">
+                          {e.vehicle_type.replace("_", " ")}
+                        </Badge>
+                        {e.travel_time > 0 && (
+                          <span className="text-[10px] font-bold text-blue-600">
+                            {e.travel_time}h viaje
+                          </span>
+                        )}
+                      </div>
+                    ) : "—"}
+                  </TableCell>
                 </TableRow>
               );
             })}
             {entries.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-12">Aún no hay registros</TableCell>
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-12">Aún no hay registros</TableCell>
               </TableRow>
             )}
           </TableBody>
