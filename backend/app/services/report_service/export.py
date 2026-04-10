@@ -27,8 +27,10 @@ def generate_xlsx_export(db: Session, **filters) -> bytes:
         TimeEntry.meals.label("meals"),
         TimeEntry.distance_origin.label("distance_origin"),
         TimeEntry.trip_type.label("trip_type"),
-        func.coalesce(func.sum(TimeEntry.hours + TimeEntry.overtime_hours), 0).label("total_hours"),
-        func.coalesce(func.sum(TimeEntry.travel_time), 0).label("travel_time")
+        func.coalesce(func.sum(TimeEntry.hours), 0).label("effective_hours"),
+        func.coalesce(func.sum(TimeEntry.overtime_hours), 0).label("overtime_hours"),
+        func.coalesce(func.sum(TimeEntry.travel_time), 0).label("travel_time"),
+        func.coalesce(func.sum(TimeEntry.meal_ticket_amount), 0).label("meal_amount")
     ).join(Project, TimeEntry.project_id == Project.id)\
      .join(Task, TimeEntry.task_id == Task.id)\
      .join(User, TimeEntry.user_id == User.id)
@@ -70,10 +72,12 @@ def generate_xlsx_export(db: Session, **filters) -> bytes:
             "emp_name": entry.employee_name,
             "task_code": entry.task_code,
             "task_name": entry.task_name,
-            "hours": float(entry.total_hours),
+            "hours": float(entry.effective_hours),
+            "overtime": float(entry.overtime_hours),
             "travel_time": float(entry.travel_time or 0),
             "vehicle": entry.vehicle_type,
             "meals": entry.meals,
+            "meal_amount": float(entry.meal_amount or 0),
             "origin": entry.distance_origin,
             "trip_type": entry.trip_type,
             "project_distance": entry.project_distance
@@ -113,16 +117,18 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
         "E": 12,   # Cód. artículo
         "F": 25,   # Desc. artículo
         "G": 10,   # Horas
-        "H": 12,   # Desplaz. (h)
-        "I": 15,   # Transporte
-        "J": 10,   # KMs
-        "K": 10,   # Dieta
+        "H": 10,   # H. Extra
+        "I": 12,   # Desplaz. (h)
+        "J": 15,   # Transporte
+        "K": 10,   # KMs
+        "L": 10,   # Dieta (S/N)
+        "M": 12,   # Importe Dieta
     }
     for col_letter, width in col_widths.items():
         ws.column_dimensions[col_letter].width = width
 
     HEADERS = ["Fecha", "Festivo", "Cód. empleado", "Nombre", "Cód. artículo", "Desc. artículo", 
-               "Horas", "Desplaz. (h)", "Transporte", "KMs", "Dieta"]
+               "Horas", "H. Extra", "Desplaz. (h)", "Transporte", "KMs", "Dieta", "Importe Dieta"]
 
     # Style for holiday rows
     holiday_fill = PatternFill("solid", fgColor="FFC7CE")  # light red
@@ -189,7 +195,11 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
             # travel_time guardado = solo ida → ×2 para ida+vuelta
             one_way_travel = float(row_info.get("travel_time", 0) or 0)
             round_trip_travel = one_way_travel * 2.0
-            net_hours = max(0.0, row_info["hours"] - round_trip_travel)
+            
+            # Las horas extra son directas, las normales pueden verse afectadas por el viaje en algunos informes (opcional)
+            # Para este reporte, mostramos lo que hay en base de datos de forma limpia:
+            effective_hours = row_info["hours"]
+            overtime_hours = row_info["overtime"]
 
             row_data = [
                 row_info["date"].strftime("%d-%m-%Y"),                 # Fecha
@@ -198,11 +208,13 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
                 row_info["emp_name"],                                  # Nombre operario
                 int(task_code) if task_code.isdigit() else task_code,  # Cód. artículo (tarea)
                 row_info["task_name"],                                 # Desc. artículo
-                net_hours,                                             # Horas (neto: total - ida×2)
+                effective_hours,                                       # Horas normales
+                overtime_hours,                                        # Horas extra
                 round_trip_travel,                                     # Desplaz. (h) ida+vuelta
                 transporte,                                            # Transporte
                 kms,                                                   # KMs
-                dieta,                                                 # Dieta
+                dieta,                                                 # Dieta (S/N)
+                row_info["meal_amount"],                               # Importe Dieta (€)
             ]
 
             for col_idx, value in enumerate(row_data, start=1):
@@ -220,9 +232,9 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
                     cell.alignment = data_alignment_center
                 elif col_idx in (3, 5):  # códigos numéricos
                     cell.alignment = data_alignment_center
-                elif col_idx in (4, 6, 9, 11):  # textos y etiquetas
+                elif col_idx in (4, 6, 10, 12, 13):  # textos y etiquetas
                     cell.alignment = data_alignment_left
-                elif col_idx in (7, 8, 10):  # Horas / Desplaz. / KMs
+                elif col_idx in (7, 8, 9, 11, 13):  # Horas / H.Extra / Desplaz. / KMs / Importe
                     cell.alignment = data_alignment_right
                     cell.number_format = '#,##0.00'
 
@@ -265,23 +277,41 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
         sum_cell.border = thin_border
         sum_cell.fill = total_fill
 
-        # Fórmula SUM para Desplaz. (col H)
-        travel_cell = ws.cell(row=current_row, column=8)
-        travel_cell.value = f"=SUM(H{first_data_row}:H{last_data_row})"
+        # Fórmula SUM para H. Extra (col H)
+        overtime_cell = ws.cell(row=current_row, column=8)
+        overtime_cell.value = f"=SUM(H{first_data_row}:H{last_data_row})"
+        overtime_cell.font = total_font
+        overtime_cell.alignment = data_alignment_right
+        overtime_cell.number_format = '#,##0.00'
+        overtime_cell.border = thin_border
+        overtime_cell.fill = total_fill
+
+        # Fórmula SUM para Desplaz. (col I)
+        travel_cell = ws.cell(row=current_row, column=9)
+        travel_cell.value = f"=SUM(I{first_data_row}:I{last_data_row})"
         travel_cell.font = total_font
         travel_cell.alignment = data_alignment_right
         travel_cell.number_format = '#,##0.00'
         travel_cell.border = thin_border
         travel_cell.fill = total_fill
         
-        # Columna de totales para KMs (col J)
-        km_total_cell = ws.cell(row=current_row, column=10)
-        km_total_cell.value = f"=SUM(J{first_data_row}:J{last_data_row})"
+        # Columna de totales para KMs (col K)
+        km_total_cell = ws.cell(row=current_row, column=11)
+        km_total_cell.value = f"=SUM(K{first_data_row}:K{last_data_row})"
         km_total_cell.font = total_font
         km_total_cell.alignment = data_alignment_right
         km_total_cell.number_format = '#,##0.00'
         km_total_cell.border = thin_border
         km_total_cell.fill = total_fill
+
+        # Columna de totales para Importe Dieta (col M)
+        diet_total_cell = ws.cell(row=current_row, column=13)
+        diet_total_cell.value = f"=SUM(M{first_data_row}:M{last_data_row})"
+        diet_total_cell.font = total_font
+        diet_total_cell.alignment = data_alignment_right
+        diet_total_cell.number_format = '#,##0.00€'
+        diet_total_cell.border = thin_border
+        diet_total_cell.fill = total_fill
 
         current_row += 1
 

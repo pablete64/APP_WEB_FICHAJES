@@ -140,6 +140,16 @@ export default function TimeEntryManagement() {
                                         {e.hours}h {isOvertime && <AlertCircle className="h-3.5 w-3.5 inline ml-1" />}
                                     </span>
                                 </div>
+                                {e.overtime_hours > 0 && (
+                                    <p className="text-xs font-bold text-amber-600">
+                                        + {e.overtime_hours}h Extra
+                                    </p>
+                                )}
+                                {(e as any).meal_ticket_amount > 0 && (
+                                    <p className="text-xs font-semibold text-emerald-600">
+                                        🎫 {(e as any).meal_ticket_amount.toFixed(2)}€ Dieta
+                                    </p>
+                                )}
                                 <p className="font-medium text-sm truncate">{user?.name || "—"}</p>
                                 <p className="text-sm text-muted-foreground truncate">
                                     {project ? `[${project.code}] ${project.name}` : "—"}
@@ -199,13 +209,16 @@ export default function TimeEntryManagement() {
                                 <TableHead>Proyecto</TableHead>
                                 <TableHead>Tarea</TableHead>
                                 <TableHead className="text-right">Horas</TableHead>
+                                <TableHead className="text-right">H. Extra</TableHead>
+                                <TableHead className="text-right">Ticket</TableHead>
+                                <TableHead className="text-right">Dieta (€)</TableHead>
                                 <TableHead className="text-right">Acciones</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {loadingEntries ? (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="text-center py-10">
+                                    <TableCell colSpan={9} className="text-center py-10">
                                         <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
                                     </TableCell>
                                 </TableRow>
@@ -223,22 +236,27 @@ export default function TimeEntryManagement() {
                                             {project ? `[${project.code}] ${project.name}` : "—"}
                                         </TableCell>
                                         <TableCell>{task?.code} - {task?.name}</TableCell>
-                                        <TableCell className={`text-right ${isOvertime ? "text-destructive font-bold" : ""}`}>
-                                            <div className="flex flex-col items-end">
-                                                <span>{e.hours}h</span>
-                                                {isOvertime && <span className="text-[10px] flex items-center gap-0.5"><AlertCircle className="h-2.5 w-2.5" /> Extra</span>}
-                                                {e.meal_ticket_photo && (
-                                                    <a 
-                                                        href={e.meal_ticket_photo} 
-                                                        target="_blank" 
-                                                        rel="noreferrer"
-                                                        className="mt-1 text-primary hover:text-primary/80"
-                                                        title="Ver Ticket"
-                                                    >
-                                                        <Receipt className="h-4 w-4" />
-                                                    </a>
-                                                )}
-                                            </div>
+                                        <TableCell className="text-right">{e.hours}h</TableCell>
+                                        <TableCell className="text-right font-bold text-amber-600">
+                                            {e.overtime_hours > 0 ? `+${e.overtime_hours}h` : "—"}
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            {e.meal_ticket_photo ? (
+                                                <a 
+                                                    href={e.meal_ticket_photo} 
+                                                    target="_blank" 
+                                                    rel="noreferrer"
+                                                    className="inline-flex items-center justify-center p-2 hover:bg-primary/10 rounded-full text-primary"
+                                                    title="Ver Ticket"
+                                                >
+                                                    <Receipt className="h-4 w-4" />
+                                                </a>
+                                            ) : "—"}
+                                        </TableCell>
+                                        <TableCell className="text-right font-medium">
+                                            {(e as any).meal_ticket_amount != null 
+                                                ? `${Number((e as any).meal_ticket_amount).toFixed(2)}€` 
+                                                : "—"}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
@@ -273,7 +291,7 @@ export default function TimeEntryManagement() {
                             })}
                             {!loadingEntries && entries.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                                    <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
                                         No hay registros para mostrar.
                                     </TableCell>
                                 </TableRow>

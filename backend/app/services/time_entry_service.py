@@ -127,6 +127,8 @@ def create_time_entry(db: Session, entry_in: TimeEntryCreate, user_id: str, is_a
         overtime_hours=final_overtime,
         vehicle_type=entry_in.vehicle_type if (is_admin or getattr(task, "requires_extra_fields", False)) else None,
         meals=entry_in.meals if (is_admin or getattr(task, "requires_extra_fields", False)) else None,
+        meal_ticket_amount=entry_in.meal_ticket_amount,
+        meal_ticket_photo=entry_in.meal_ticket_photo,
         distance_origin=entry_in.distance_origin if (is_admin or getattr(task, "requires_extra_fields", False)) else None,
         trip_type=entry_in.trip_type if (is_admin or getattr(task, "requires_extra_fields", False)) else None,
         travel_time=entry_in.travel_time or 0.0,
@@ -186,6 +188,18 @@ def update_entry(db: Session, entry_id: str, entry_in: TimeEntryCreate, actor_id
     db_entry.is_holiday = entry_in.is_holiday
     db_entry.hours = final_hours
     db_entry.overtime_hours = final_overtime
+    
+    # Update logistics and ticket fields
+    db_entry.vehicle_type = entry_in.vehicle_type
+    db_entry.meals = entry_in.meals
+    db_entry.meal_ticket_amount = entry_in.meal_ticket_amount
+    db_entry.distance_origin = entry_in.distance_origin
+    db_entry.trip_type = entry_in.trip_type
+    db_entry.travel_time = entry_in.travel_time or 0.0
+    
+    # Note: meal_ticket_photo usually comes from separate upload, but allow setting here if provided
+    if entry_in.meal_ticket_photo is not None:
+        db_entry.meal_ticket_photo = entry_in.meal_ticket_photo
     
     new_values = {
         "hours": final_hours,
