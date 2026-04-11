@@ -72,4 +72,5 @@ pnpm-lock.yaml
 *.orig
 repro_*.py
 create_user.py
+ACCESOS_SISTEMA.txt
 

@@ -71,14 +71,23 @@ def _validate_time_entry_business_rules(db: Session, entry_in: TimeEntryCreate, 
 
     # 5. Validar Roles permitido de la tarea (ALLOWED ROLES)
     from app.models.user import User
+    from app.models.project_user import ProjectUser
     user = db.query(User).filter(User.id == target_user_id, User.deleted_at == None).first()
     if not user:
          raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    # Obtenemos el rol efectivo (el del proyecto si existe, sino el global)
+    project_user = db.query(ProjectUser).filter(
+        ProjectUser.project_id == entry_in.project_id,
+        ProjectUser.user_id == target_user_id
+    ).first()
+    
+    effective_role = project_user.role if project_user else user.role
          
-    if task.allowed_roles and user.role not in task.allowed_roles:
+    if task.allowed_roles and effective_role not in task.allowed_roles:
          raise HTTPException(
              status_code=status.HTTP_403_FORBIDDEN,
-             detail=f"User role '{user.role}' is not allowed for task '{task.code}' (Allowed: {task.allowed_roles})"
+             detail=f"User role '{effective_role}' is not allowed for task '{task.code}' (Allowed: {task.allowed_roles})"
          )
 
     # Validar lógica de Proyectos Oferta
