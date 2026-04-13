@@ -245,16 +245,38 @@ export default function StatisticsPage() {
     });
     const orig = Object.values(origMap).sort((a, b) => b.km - a.km);
 
-    // Meals
-    const daysWithMeals    = new Set<string>();
-    const daysWithoutMeals = new Set<string>();
+    // Meals (consolidados por día)
+    const mealByDay: Record<string, { hasSi: boolean; hasNo: boolean; ticketSum: number; rate: number }> = {};
     monthEntries.forEach(e => {
       const d = (typeof e.date === "string" ? e.date : "").slice(0, 10);
-      if ((e as any).meals === true)  daysWithMeals.add(d);
-      if ((e as any).meals === false) daysWithoutMeals.add(d);
+      if (!mealByDay[d]) mealByDay[d] = { hasSi: false, hasNo: false, ticketSum: 0, rate: 0 };
+      
+      const entry = e as any;
+      if (entry.meals === true) {
+        mealByDay[d].hasSi = true;
+        mealByDay[d].ticketSum += (entry.meal_ticket_amount || 0);
+        // Fallback rate from project
+        const prj = projectMap[e.project_id];
+        const prjRate = prj ? (prj as any).daily_allowance_rate : 37.40;
+        mealByDay[d].rate = Math.max(mealByDay[d].rate, prjRate);
+      } else if (entry.meals === false) {
+        mealByDay[d].hasNo = true;
+      }
     });
 
-    const hasTr = kmEntries.length > 0 || daysWithMeals.size > 0 || daysWithoutMeals.size > 0;
+    let dSi = 0;
+    let dNo = 0;
+    let totalMealCost = 0;
+    Object.values(mealByDay).forEach(v => {
+      if (v.hasSi) {
+        dSi++;
+        totalMealCost += (v.ticketSum > 0 ? v.ticketSum : v.rate);
+      } else if (v.hasNo) {
+        dNo++;
+      }
+    });
+
+    const hasTr = kmEntries.length > 0 || dSi > 0 || dNo > 0;
 
     return {
       totalH, totalFj, dias,
@@ -262,9 +284,11 @@ export default function StatisticsPage() {
       hasTr,
       kmP: Math.round(totalKm * 10) / 10,
       orig,
-      dSi: daysWithMeals.size,
-      dNo: daysWithoutMeals.size,
+      dSi,
+      dNo,
+      costDi: totalMealCost,
     };
+
   }, [monthEntries, taskMap, projectMap, selYear]);
 
   const avgDaily   = stats ? (stats.totalH / stats.dias).toFixed(1) : "0.0";
@@ -598,7 +622,7 @@ export default function StatisticsPage() {
                       <div style={{ padding: "10px 14px", background: C.greenBg, borderRadius: 10, border: "1px solid #a7f3d0" }}>
                         <div style={{ display: "flex", justifyContent: "space-between" }}>
                           <span style={{ fontSize: 12, fontWeight: 600 }}>Coste dietas estimado</span>
-                          <span style={{ fontSize: 14, fontWeight: 800, color: C.green }}>{(stats.dSi * 37.40).toFixed(2)} €</span>
+                          <span style={{ fontSize: 14, fontWeight: 800, color: C.green }}>{stats.costDi.toFixed(2)} €</span>
                         </div>
                       </div>
                     </div>

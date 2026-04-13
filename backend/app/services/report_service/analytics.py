@@ -48,6 +48,7 @@ def get_analytics_summary(db: Session, **filters) -> dict:
     logistics = {}    # {user: {personal: 0, company: 0, km_cost: 0.0}}
     travel_by_user = {}  # {user: total_minutes}
     dietas = {}       # {user: {yes: 0, no: 0, cost: 0.0}}
+    _day_diets = {}    # {(user, date): {"has_meals": bool, "ticket_sum": float, "rate_fallback": float}}
     skills = {}       # {user: {cat: hours}}
     treemap_raw = {}  # {cat: {task: hours}}
     total_ovt = 0.0
@@ -107,18 +108,23 @@ def get_analytics_summary(db: Session, **filters) -> dict:
                 mins = tt_total // 2 # ida o vuelta por separado
             travel_by_user[u] = travel_by_user.get(u, 0) + mins
 
-        # 9. Dietas
+        # 9. Dietas - Agrupar por usuario y fecha para evitar duplicidades
         if u not in dietas: dietas[u] = {"yes": 0, "no": 0, "cost": 0.0}
-        if e.meals is True: 
-            dietas[u]["yes"] += 1
-            # Prioritize ticket amount if present, fallback to fixed project rate
+        
+        day_key = (u, d_str)
+        if day_key not in _day_diets:
+            _day_diets[day_key] = {"has_meals": False, "ticket_sum": 0.0, "rate_fallback": 0.0}
+        
+        if e.meals is True:
+            _day_diets[day_key]["has_meals"] = True
             ticket_amt = float(e.meal_ticket_amount or 0)
-            if ticket_amt > 0:
-                dietas[u]["cost"] += ticket_amt
-            else:
-                dietas[u]["cost"] += float(e.daily_allowance_rate or 0)
-        elif e.meals is False: 
-            dietas[u]["no"] += 1
+            _day_diets[day_key]["ticket_sum"] += ticket_amt
+            # Conservamos la tasa del proyecto más alta del día por si no hay tickets
+            _day_diets[day_key]["rate_fallback"] = max(_day_diets[day_key]["rate_fallback"], float(e.daily_allowance_rate or 0))
+        elif e.meals is False:
+            # Si al menos un registro dice NO, y ninguno dice SÍ, se cuenta como NO
+            # Pero si uno dice SÍ, prevalece el SÍ para el día
+            pass
 
         # 10. Skills (Radar)
         if u not in skills: skills[u] = {}
@@ -127,6 +133,19 @@ def get_analytics_summary(db: Session, **filters) -> dict:
         # 11. Treemap
         if c not in treemap_raw: treemap_raw[c] = {}
         treemap_raw[c][t] = treemap_raw[c].get(t, 0) + h
+
+    # Finalizar agregación de dietas tras procesar todos los registros
+    for (u, d_str), data in _day_diets.items():
+        if data["has_meals"]:
+            dietas[u]["yes"] += 1
+            if data["ticket_sum"] > 0:
+                dietas[u]["cost"] += data["ticket_sum"]
+            else:
+                dietas[u]["cost"] += data["rate_fallback"]
+        else:
+            # Para simplificar, si no hubo "SÍ" en ningún registro del día, lo contamos como "NO"
+            # (Aunque esto podría refinarse si es necesario)
+            dietas[u]["no"] += 1
 
     # Formatting for Recharts
     formatted_heatmap = [{"user": u, "data": [{"date": d, "hours": hrs} for d, hrs in d_map.items()]} for u, d_map in heatmap_data.items()]
@@ -141,6 +160,7 @@ def get_analytics_summary(db: Session, **filters) -> dict:
         key=lambda x: x["travel_hours"]
     )
     formatted_dietas = [{"name": u, "yes": v["yes"], "no": v["no"], "cost": v["cost"]} for u, v in dietas.items()]
+
     formatted_skills = []
     for u, cats in skills.items():
         for c, h in cats.items():
