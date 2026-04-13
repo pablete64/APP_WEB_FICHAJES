@@ -32,7 +32,8 @@ export default function ProjectsPage() {
       toast.success("Proyecto creado");
       setName(""); setCode(""); setLocation(""); setDistance("0");
       setTravelTime("0");
-      setSelectedUsers([]); setAssignAll(false); setProjectType("standard");
+      setSelectedUsers([]); setProjectType("standard");
+
       setOpen(false);
     },
     onError: () => toast.error("Error al crear proyecto"),
@@ -67,8 +68,8 @@ export default function ProjectsPage() {
   const [travelTime, setTravelTime] = useState("0");
   const [kmRate, setKmRate] = useState("0.19");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
-  const [assignAll, setAssignAll] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState<{user_id: string, role: string}[]>([]);
+
   const [projectType, setProjectType] = useState<"standard" | "offer" | "non-productive">("standard");
 
   const resetForm = () => {
@@ -76,7 +77,8 @@ export default function ProjectsPage() {
     setName(""); setCode(""); setLocation(""); setDistance("0"); setTravelTime("0");
     setKmRate("0.19");
     setStartDate(new Date().toISOString().split("T")[0]);
-    setSelectedUsers([]); setAssignAll(false); setProjectType("standard");
+    setSelectedUsers([]); setProjectType("standard");
+
   };
 
   const nonAdminUsers = users.filter((u: any) => u.role !== "Admin" && u.role !== "Management");
@@ -96,8 +98,9 @@ export default function ProjectsPage() {
       travel_time: parseInt(travelTime) || 0,
       km_rate: parseFloat(kmRate) || 0,
       start_date: startDate,
-      assigned_users: assignAll ? nonAdminUsers.map((u: any) => ({ user_id: u.id, role: u.role })) : selectedUsers,
+      assigned_users: selectedUsers,
       type: projectType,
+
     };
 
     if (editingProjectId) {
@@ -118,7 +121,7 @@ export default function ProjectsPage() {
     setStartDate(p.start_date);
     setProjectType(p.type);
     setSelectedUsers(p.assigned_users || []);
-    setAssignAll(false);
+
     setOpen(true);
   };
 
@@ -173,36 +176,31 @@ export default function ProjectsPage() {
                 <div><Label>Precio €/KM</Label><Input type="number" step="0.01" min="0" value={kmRate} onChange={e => setKmRate(e.target.value)} /></div>
               </div>
               <div><Label>Fecha de inicio</Label><Input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} /></div>
-              <div className="flex items-center gap-3">
-                <Switch checked={assignAll} onCheckedChange={setAssignAll} id="assignAll" />
-                <Label htmlFor="assignAll">Asignar a todos los usuarios</Label>
-              </div>
-              {!assignAll && (
-                <div className="space-y-1">
-                  <Label>Asignar Usuarios</Label>
-                  <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-2">
-                    {nonAdminUsers.map((u: any) => {
-                      const sel = selectedUsers.find(su => su.user_id === u.id);
-                      return (
-                        <div key={u.id} className="flex items-center gap-2 border rounded min-h-9 px-2">
-                           <Switch checked={!!sel} onCheckedChange={() => toggleUser(u)} />
-                           <span className="text-sm flex-1">{u.name}</span>
-                           {sel && (
-                             <Select value={sel.role} onValueChange={(val) => updateRole(u.id, val)}>
-                                <SelectTrigger className="h-7 text-xs w-[180px]">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                   {ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
-                                </SelectContent>
-                             </Select>
-                           )}
-                        </div>
-                      )
-                    })}
-                  </div>
+              <div className="space-y-1">
+                <Label>Asignar Usuarios</Label>
+                <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-2">
+                  {nonAdminUsers.map((u: any) => {
+                    const sel = selectedUsers.find(su => su.user_id === u.id);
+                    return (
+                      <div key={u.id} className="flex items-center gap-2 border rounded min-h-9 px-2">
+                         <Switch checked={!!sel} onCheckedChange={() => toggleUser(u)} />
+                         <span className="text-sm flex-1">{u.name}</span>
+                         {sel && (
+                           <Select value={sel.role} onValueChange={(val) => updateRole(u.id, val)}>
+                              <SelectTrigger className="h-7 text-xs w-[180px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                 {ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                              </SelectContent>
+                           </Select>
+                         )}
+                      </div>
+                    )
+                  })}
                 </div>
-              )}
+              </div>
+
                <Button onClick={handleSave} className="w-full">{editingProjectId ? "Actualizar Proyecto" : "Crear Proyecto"}</Button>
             </div>
           </DialogContent>
