@@ -119,7 +119,8 @@ export default function HelpPage() {
             <li><strong>Tipo de Proyecto:</strong>
               <ul className="list-disc pl-6 mt-1">
                 <li><strong>Estándar:</strong> Proyecto normal con múltiples tareas.</li>
-                <li><strong>Preparación de Oferta:</strong> Proyecto especial que solo contiene la tarea <Badge variant="secondary" className="text-xs">115 – Estudio de oferta</Badge>. Se selecciona automáticamente.</li>
+                <li><strong>Preparación de Oferta:</strong> Proyecto para registrar preventas y estudios de oferta.</li>
+
                 <li><strong>No Productivo (código 000):</strong> Para registrar horas que no corresponden a ninguna actividad productiva (formación, reuniones internas, etc.).</li>
               </ul>
             </li>
@@ -284,7 +285,8 @@ export default function HelpPage() {
             </div>
             <div className="flex gap-3">
               <Badge className="shrink-0">Paso 5</Badge>
-              <div><strong>Seleccionar Tarea:</strong> Elige la tarea en la que has trabajado. Solo aparecen las tareas correspondientes al rol seleccionado en el Paso 2. Si el proyecto es de tipo "Preparación de Oferta", se selecciona automáticamente la tarea 115.</div>
+              <div><strong>Seleccionar Tarea:</strong> Elige la tarea en la que has trabajado. Solo aparecen las tareas correspondientes al rol seleccionado en los pasos anteriores.</div>
+
             </div>
             <div className="flex gap-3">
               <Badge className="shrink-0">Paso 6</Badge>

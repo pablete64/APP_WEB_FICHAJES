@@ -221,32 +221,24 @@ export default function LogHours() {
           {/* ── Step 4: Task ── */}
           {step === 4 && (
             <>
-              {(selectedProject as any)?.type === "offer" ? (
-                <div className="p-3 rounded-lg bg-muted text-sm">
-                  Selección automática: <strong>115 – Estudio de oferta</strong>
-                  {(() => { if (!taskCode) setTaskCode("115"); return null; })()}
-                </div>
-              ) : (
-                <>
-                  <Select value={taskCode} onValueChange={setTaskCode}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={
-                        filteredTasks.length > 0 ? "Elige una tarea" : "Sin tareas para este rol"
-                      } />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredTasks.map(t => (
-                        <SelectItem key={t.code} value={t.code}>{t.code} – {t.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {filteredTasks.length === 0 && roleInProject && (
-                    <p className="text-xs text-muted-foreground">
-                      No hay tareas disponibles para tu rol ({roleInProject}).
-                    </p>
-                  )}
-                </>
+              <Select value={taskCode} onValueChange={setTaskCode}>
+                <SelectTrigger>
+                  <SelectValue placeholder={
+                    filteredTasks.length > 0 ? "Elige una tarea" : "Sin tareas para este rol"
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredTasks.map(t => (
+                    <SelectItem key={t.code} value={t.code}>{t.code} – {t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {filteredTasks.length === 0 && roleInProject && (
+                <p className="text-xs text-muted-foreground">
+                  No hay tareas disponibles para tu rol ({roleInProject}).
+                </p>
               )}
+
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button variant="outline" onClick={() => setStep(3)} className="flex-1">Atrás</Button>
                 <Button disabled={!taskCode} onClick={() => setStep(5)} className="flex-1">Siguiente</Button>

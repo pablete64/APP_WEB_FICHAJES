@@ -90,12 +90,8 @@ def _validate_time_entry_business_rules(db: Session, entry_in: TimeEntryCreate, 
              detail=f"User role '{effective_role}' is not allowed for task '{task.code}' (Allowed: {task.allowed_roles})"
          )
 
-    # Validar lógica de Proyectos Oferta
-    if project.type == "offer" and task.code != "115":
-        raise HTTPException(
-             status_code=status.HTTP_400_BAD_REQUEST,
-             detail="Offer projects only admit task '115'"
-         )
+    # Validar lógica de Proyectos Oferta - ELIMINADO para permitir tareas según rol
+
 
     # 5. Validar tareas de cliente 4XX (requires_extra_fields)
     if getattr(task, "requires_extra_fields", False):
