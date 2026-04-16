@@ -7,6 +7,7 @@ from app.database.session import get_db
 from app.auth.dependencies import get_current_user, require_admin
 from app.models.user import User
 from app.models.time_entry import TimeEntry
+from app.models.time_entry_ticket import TimeEntryTicket
 from app.schemas.time_entry import TimeEntryCreate, TimeEntryResponse
 from app.services import time_entry_service
 
@@ -44,6 +45,24 @@ def _is_allowed_ticket_upload(file: UploadFile) -> bool:
         return True
 
     return extension in ALLOWED_UPLOAD_EXTENSIONS
+
+
+def _get_entry_or_403(db: Session, entry_id: str, current_user: User) -> TimeEntry:
+    entry = db.query(TimeEntry).filter(TimeEntry.id == entry_id, TimeEntry.deleted_at == None).first()
+    if not entry:
+        raise HTTPException(status_code=404, detail="Fichaje no encontrado")
+    if entry.user_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Sin permiso")
+    return entry
+
+
+def _sync_primary_ticket_photo(entry: TimeEntry) -> None:
+    attachments = sorted(
+        entry.ticket_attachments,
+        key=lambda attachment: attachment.created_at.isoformat() if attachment.created_at else "",
+        reverse=True,
+    )
+    entry.meal_ticket_photo = attachments[0].file_path if attachments else None
 
 router = APIRouter(prefix="/time-entries", tags=["Time Entries"])
 
@@ -91,12 +110,7 @@ def upload_ticket_photo(
     current_user: User = Depends(get_current_user)
 ):
     """Sube la foto del ticket de dieta y la asocia al fichaje."""
-    entry = db.query(TimeEntry).filter(TimeEntry.id == entry_id, TimeEntry.deleted_at == None).first()
-    if not entry:
-        raise HTTPException(status_code=404, detail="Fichaje no encontrado")
-    # Only the owner or an admin can upload
-    if entry.user_id != current_user.id and not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Sin permiso")
+    entry = _get_entry_or_403(db, entry_id, current_user)
 
     if not _is_allowed_ticket_upload(file):
         raise HTTPException(status_code=400, detail="Formato no válido. Usa JPG, PNG, WebP, HEIC o HEIF.")
@@ -107,7 +121,41 @@ def upload_ticket_photo(
     with open(dest, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
-    entry.meal_ticket_photo = f"/uploads/tickets/{filename}"
+    attachment = TimeEntryTicket(
+        time_entry_id=entry.id,
+        file_path=f"/uploads/tickets/{filename}",
+        original_filename=file.filename,
+    )
+    db.add(attachment)
+    db.flush()
+    entry.ticket_attachments.append(attachment)
+    _sync_primary_ticket_photo(entry)
+    db.commit()
+    db.refresh(entry)
+    return entry
+
+
+@router.delete("/{entry_id}/ticket-attachments/{attachment_id}", response_model=TimeEntryResponse)
+def delete_ticket_attachment(
+    entry_id: str,
+    attachment_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Borra un ticket adjunto de un fichaje."""
+    entry = _get_entry_or_403(db, entry_id, current_user)
+    attachment = next((item for item in entry.ticket_attachments if item.id == attachment_id), None)
+    if not attachment:
+        raise HTTPException(status_code=404, detail="Ticket adjunto no encontrado")
+
+    if attachment.file_path.startswith("/uploads/"):
+        disk_path = os.path.join("/app", attachment.file_path.lstrip("/"))
+        if os.path.exists(disk_path):
+            os.remove(disk_path)
+
+    db.delete(attachment)
+    db.flush()
+    _sync_primary_ticket_photo(entry)
     db.commit()
     db.refresh(entry)
     return entry

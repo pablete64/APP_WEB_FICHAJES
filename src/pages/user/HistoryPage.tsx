@@ -5,7 +5,8 @@ import { projectService } from "@/services/projectService";
 import { taskService } from "@/services/taskService";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { History, Receipt, ExternalLink } from "lucide-react";
+import { History } from "lucide-react";
+import { TicketAttachmentsMenu } from "@/components/TicketAttachmentsMenu";
 
 export default function HistoryPage() {
   const { data: rawEntries = [] } = useQuery({ queryKey: ["myEntries"], queryFn: timeEntryService.getMyEntries });
@@ -58,15 +59,11 @@ export default function HistoryPage() {
                     </span>
                   )}
                 </div>
-                {e.meal_ticket_photo && (
-                  <a 
-                    href={e.meal_ticket_photo} 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="flex items-center gap-1.5 text-xs text-primary hover:underline bg-primary/5 px-2 py-1 rounded"
-                  >
-                    <Receipt className="h-3.5 w-3.5" /> Ver Ticket
-                  </a>
+                {e.ticket_attachments?.length > 0 && (
+                  <div className="flex items-center gap-1.5 rounded bg-primary/5 px-2 py-1">
+                    <TicketAttachmentsMenu entryId={e.id} attachments={e.ticket_attachments} />
+                    <span className="text-xs text-primary">Ver tickets</span>
+                  </div>
                 )}
               </div>
               {e.vehicle_type && (
@@ -116,16 +113,10 @@ export default function HistoryPage() {
                     {e.meal_ticket_amount ? `${e.meal_ticket_amount.toFixed(2)}€` : "—"}
                   </TableCell>
                   <TableCell className="text-right">
-                    {e.meal_ticket_photo ? (
-                      <a 
-                        href={e.meal_ticket_photo} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="inline-flex items-center justify-center p-2 hover:bg-primary/10 rounded-full text-primary"
-                        title="Ver Ticket de Dieta"
-                      >
-                        <Receipt className="h-4 w-4" />
-                      </a>
+                    {e.ticket_attachments?.length > 0 ? (
+                      <div className="inline-flex justify-end">
+                        <TicketAttachmentsMenu entryId={e.id} attachments={e.ticket_attachments} />
+                      </div>
                     ) : (
                       "—"
                     )}

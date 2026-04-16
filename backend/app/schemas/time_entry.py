@@ -1,6 +1,15 @@
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
-from datetime import date
+from datetime import date, datetime
+
+
+class TicketAttachmentResponse(BaseModel):
+    id: str
+    file_path: str
+    original_filename: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
 class TimeEntryCreate(BaseModel):
     project_id: str
@@ -22,4 +31,5 @@ class TimeEntryCreate(BaseModel):
 class TimeEntryResponse(TimeEntryCreate):
     id: str
     user_id: str
+    ticket_attachments: list[TicketAttachmentResponse] = []
     model_config = ConfigDict(from_attributes=True)

@@ -109,8 +109,8 @@ export default function LogHours() {
   const [vehicleUsed, setVehicleUsed] = useState<string>("empresa");
   const [hasMealTicket, setHasMealTicket] = useState(false);
   const [ticketAmount, setTicketAmount] = useState("");
-  const [ticketFile, setTicketFile] = useState<File | null>(null);
-  const [ticketPreview, setTicketPreview] = useState<string | null>(null);
+  const [ticketFiles, setTicketFiles] = useState<File[]>([]);
+  const [ticketPreviews, setTicketPreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: allProjects = [] } = useQuery({
@@ -164,22 +164,23 @@ export default function LogHours() {
     setVehicleUsed("empresa");
     setHasMealTicket(false);
     setTicketAmount("");
-    setTicketFile(null);
-    setTicketPreview(null);
+    setTicketFiles([]);
+    setTicketPreviews([]);
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
     try {
-      const optimizedFile = await optimizeTicketImage(f);
-      setTicketFile(optimizedFile);
-      setTicketPreview(URL.createObjectURL(optimizedFile));
+      const optimizedFiles = await Promise.all(files.map(optimizeTicketImage));
+      setTicketFiles((prev) => [...prev, ...optimizedFiles]);
+      setTicketPreviews((prev) => [...prev, ...optimizedFiles.map((file) => URL.createObjectURL(file))]);
     } catch {
-      setTicketFile(f);
-      setTicketPreview(URL.createObjectURL(f));
+      setTicketFiles((prev) => [...prev, ...files]);
+      setTicketPreviews((prev) => [...prev, ...files.map((file) => URL.createObjectURL(file))]);
       toast.error("No se pudo optimizar la foto. Se intentara subir el archivo original.");
     }
+    e.target.value = "";
   };
 
   const mutation = useMutation({
@@ -205,8 +206,10 @@ export default function LogHours() {
       });
 
       // 2. Upload ticket photo if provided
-      if (isClientTask && hasMealTicket && ticketFile && entry.id) {
-        await timeEntryService.uploadTicketPhoto(entry.id, ticketFile);
+      if (isClientTask && hasMealTicket && ticketFiles.length > 0 && entry.id) {
+        for (const ticketFile of ticketFiles) {
+          await timeEntryService.uploadTicketPhoto(entry.id, ticketFile);
+        }
       }
 
       return entry;
@@ -391,7 +394,7 @@ export default function LogHours() {
                         checked={hasMealTicket}
                         onCheckedChange={(v) => {
                           setHasMealTicket(v);
-                          if (!v) { setTicketAmount(""); setTicketFile(null); setTicketPreview(null); }
+                          if (!v) { setTicketAmount(""); setTicketFiles([]); setTicketPreviews([]); }
                         }}
                         id="meals"
                       />
@@ -419,40 +422,47 @@ export default function LogHours() {
                             ref={fileInputRef}
                             type="file"
                             accept="image/*"
+                            multiple
                             capture="environment"
                             className="hidden"
                             onChange={handleFileChange}
                           />
-                          {ticketPreview ? (
-                            <div className="relative mt-1.5">
-                              <img
-                                src={ticketPreview}
-                                alt="Ticket"
-                                className="w-full max-h-48 object-contain rounded-md border"
-                              />
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="absolute top-1 right-1 h-7 w-7 bg-background/80 hover:bg-background"
-                                onClick={() => { setTicketFile(null); setTicketPreview(null); }}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="mt-1.5 w-full gap-2"
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                            <Upload className="h-4 w-4" />
+                            {ticketPreviews.length > 0 ? "Anadir otra foto del ticket" : "Subir foto del ticket"}
+                          </Button>
+                          {ticketPreviews.length > 0 && (
+                            <div className="mt-3 space-y-3">
+                              {ticketPreviews.map((preview, index) => (
+                                <div key={`${preview}-${index}`} className="relative">
+                                  <img
+                                    src={preview}
+                                    alt={`Ticket ${index + 1}`}
+                                    className="w-full max-h-48 object-contain rounded-md border"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute top-1 right-1 h-7 w-7 bg-background/80 hover:bg-background"
+                                    onClick={() => {
+                                      setTicketFiles((prev) => prev.filter((_, fileIndex) => fileIndex !== index));
+                                      setTicketPreviews((prev) => prev.filter((_, previewIndex) => previewIndex !== index));
+                                    }}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
                             </div>
-                          ) : (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="mt-1.5 w-full gap-2"
-                              onClick={() => fileInputRef.current?.click()}
-                            >
-                              <Upload className="h-4 w-4" />
-                              Subir foto del ticket
-                            </Button>
                           )}
                           <p className="text-xs text-muted-foreground mt-1">
-                            Opcional. La foto se optimiza automaticamente antes de subirla.
+                            Opcional. Puedes anadir varias fotos y se optimizan automaticamente antes de subirlas.
                           </p>
                         </div>
                       </div>

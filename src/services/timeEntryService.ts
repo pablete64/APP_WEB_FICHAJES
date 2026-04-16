@@ -1,5 +1,12 @@
 import { fetchApi } from './api';
 
+export interface TicketAttachmentResponse {
+    id: string;
+    file_path: string;
+    original_filename?: string;
+    created_at?: string;
+}
+
 export interface TimeEntryCreate {
     project_id: string;
     task_id: string;
@@ -21,6 +28,7 @@ export interface TimeEntryResponse extends TimeEntryCreate {
     id: string;
     user_id: string;
     travel_time?: number;
+    ticket_attachments: TicketAttachmentResponse[];
 }
 
 export const timeEntryService = {
@@ -37,6 +45,12 @@ export const timeEntryService = {
         return fetchApi<TimeEntryResponse>(`/time-entries/${entryId}/upload-ticket`, {
             method: 'POST',
             body: form,
+        });
+    },
+
+    deleteTicketAttachment: async (entryId: string, attachmentId: string): Promise<TimeEntryResponse> => {
+        return fetchApi<TimeEntryResponse>(`/time-entries/${entryId}/ticket-attachments/${attachmentId}`, {
+            method: 'DELETE',
         });
     },
 

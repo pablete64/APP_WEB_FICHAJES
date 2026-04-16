@@ -18,8 +18,9 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, ExternalLink } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { TimeEntryResponse, TimeEntryCreate } from "@/services/timeEntryService";
+import { TicketAttachmentsMenu } from "@/components/TicketAttachmentsMenu";
 
 interface TimeEntryDialogProps {
     open: boolean;
@@ -41,6 +42,7 @@ export function TimeEntryDialog({
     onSave
 }: TimeEntryDialogProps) {
     const [loading, setLoading] = useState(false);
+    const [managedEntry, setManagedEntry] = useState<TimeEntryResponse | null>(entry || null);
     const [formData, setFormData] = useState<Partial<TimeEntryCreate>>({
         date: new Date().toISOString().split("T")[0],
         hours: 0,
@@ -49,6 +51,7 @@ export function TimeEntryDialog({
     });
 
     useEffect(() => {
+        setManagedEntry(entry || null);
         if (entry) {
             setFormData({
                 user_id: entry.user_id,
@@ -305,31 +308,21 @@ export function TimeEntryDialog({
                         </div>
                     </div>
 
-                        {entry && (entry as any).meal_ticket_photo && (
+                        {managedEntry && (
                             <div className="mt-4 pt-4 border-t space-y-2">
                                 <Label className="text-xs font-semibold uppercase text-muted-foreground italic">
-                                    Documento adjunto: Ticket de Dieta
+                                    Tickets adjuntos
                                 </Label>
-                                <div className="relative border rounded-md overflow-hidden bg-muted/30 group">
-                                    <img 
-                                        src={(entry as any).meal_ticket_photo} 
-                                        alt="Ticket" 
-                                        className="w-full max-h-60 object-contain mx-auto transition-all group-hover:opacity-90 cursor-zoom-in"
-                                        onClick={() => window.open((entry as any).meal_ticket_photo, '_blank')}
+                                <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-3">
+                                    <TicketAttachmentsMenu
+                                        entryId={managedEntry.id}
+                                        attachments={managedEntry.ticket_attachments || []}
+                                        canManage
+                                        onEntryUpdated={setManagedEntry}
                                     />
-                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Button 
-                                            variant="secondary" 
-                                            size="icon" 
-                                            className="h-8 w-8 shadow-md"
-                                            onClick={() => window.open((entry as any).meal_ticket_photo, '_blank')}
-                                        >
-                                            <ExternalLink className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                    <div className="text-[10px] text-center p-1 text-muted-foreground bg-background/50 border-t">
-                                        Haz clic en la imagen para ampliar
-                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                        Gestiona los tickets de este fichaje desde el menu.
+                                    </p>
                                 </div>
                             </div>
                         )}

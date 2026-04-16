@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { reportService } from "@/services/reportService";
 import { timeEntryService } from "@/services/timeEntryService";
 import { projectService } from "@/services/projectService";
 import { taskService } from "@/services/taskService";
@@ -11,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
-    Settings2, Trash2, Edit2, Loader2, AlertCircle, Plus, Receipt, ExternalLink
+    Settings2, Trash2, Edit2, Loader2, AlertCircle, Plus
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -27,6 +26,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { TimeEntryDialog } from "@/components/admin/TimeEntryDialog";
 import { TimeEntryCreate } from "@/services/timeEntryService";
+import { TicketAttachmentsMenu } from "@/components/TicketAttachmentsMenu";
 
 export default function TimeEntryManagement() {
     const queryClient = useQueryClient();
@@ -157,16 +157,16 @@ export default function TimeEntryManagement() {
                                 <p className="text-sm truncate">{task ? `${task.code} – ${task.name}` : "—"}</p>
                                 <div className="flex items-center justify-between pt-1">
                                     <div className="flex gap-2">
-                                        {e.meal_ticket_photo && (
-                                            <a 
-                                                href={e.meal_ticket_photo} 
-                                                target="_blank" 
-                                                rel="noreferrer"
-                                                className="flex items-center gap-1 text-xs text-primary hover:underline"
-                                            >
-                                                <Receipt className="h-3.5 w-3.5" /> Ticket
-                                            </a>
-                                        )}
+                                        <div className="flex items-center gap-1">
+                                            <TicketAttachmentsMenu
+                                                entryId={e.id}
+                                                attachments={e.ticket_attachments || []}
+                                                canManage
+                                            />
+                                            <span className="text-xs text-primary">
+                                                {e.ticket_attachments?.length > 0 ? "Tickets" : "Subir"}
+                                            </span>
+                                        </div>
                                     </div>
                                     <div className="flex gap-2">
 
@@ -241,17 +241,13 @@ export default function TimeEntryManagement() {
                                             {e.overtime_hours > 0 ? `+${e.overtime_hours}h` : "—"}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            {e.meal_ticket_photo ? (
-                                                <a 
-                                                    href={e.meal_ticket_photo} 
-                                                    target="_blank" 
-                                                    rel="noreferrer"
-                                                    className="inline-flex items-center justify-center p-2 hover:bg-primary/10 rounded-full text-primary"
-                                                    title="Ver Ticket"
-                                                >
-                                                    <Receipt className="h-4 w-4" />
-                                                </a>
-                                            ) : "—"}
+                                            <div className="inline-flex justify-end">
+                                                <TicketAttachmentsMenu
+                                                    entryId={e.id}
+                                                    attachments={e.ticket_attachments || []}
+                                                    canManage
+                                                />
+                                            </div>
                                         </TableCell>
                                         <TableCell className="text-right font-medium">
                                             {(e as any).meal_ticket_amount != null 

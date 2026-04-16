@@ -35,3 +35,8 @@ class TimeEntry(Base):
     user = relationship("User", back_populates="time_entries")
     project = relationship("Project", back_populates="time_entries")
     task = relationship("Task", back_populates="time_entries")
+    ticket_attachments = relationship(
+        "TimeEntryTicket",
+        back_populates="time_entry",
+        cascade="all, delete-orphan",
+    )

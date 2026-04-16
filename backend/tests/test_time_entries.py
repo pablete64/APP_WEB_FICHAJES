@@ -255,3 +255,73 @@ def test_upload_ticket_photo_accepts_valid_extension_with_generic_mime(user_clie
     )
     assert upload_response.status_code == 200
     assert upload_response.json()["meal_ticket_photo"].lower().endswith(".heic")
+
+
+def test_upload_ticket_photo_supports_multiple_attachments(user_client, admin_client, seed_projects, seed_tasks, normal_user):
+    project = get_project_by_type(seed_projects, "standard")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
+    task = get_task_by_code(seed_tasks, "400")
+
+    payload = {
+        "project_id": project.id,
+        "task_id": task.id,
+        "date": date.today().isoformat(),
+        "hours": 8.0,
+        "vehicle_type": "coche_personal",
+        "distance_origin": "NAVE",
+        "meals": True,
+    }
+    create_response = user_client.post("/time-entries/", json=payload)
+    assert create_response.status_code == 201
+    entry_id = create_response.json()["id"]
+
+    first_upload = user_client.post(
+        f"/time-entries/{entry_id}/upload-ticket",
+        files={"file": ("ticket-1.jpg", BytesIO(b"fake-jpg-image"), "image/jpeg")},
+    )
+    second_upload = user_client.post(
+        f"/time-entries/{entry_id}/upload-ticket",
+        files={"file": ("ticket-2.jpg", BytesIO(b"fake-jpg-image-2"), "image/jpeg")},
+    )
+
+    assert first_upload.status_code == 200
+    assert second_upload.status_code == 200
+    assert len(second_upload.json()["ticket_attachments"]) == 2
+
+
+def test_delete_ticket_attachment_removes_only_selected_file(user_client, admin_client, seed_projects, seed_tasks, normal_user):
+    project = get_project_by_type(seed_projects, "standard")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
+    task = get_task_by_code(seed_tasks, "400")
+
+    payload = {
+        "project_id": project.id,
+        "task_id": task.id,
+        "date": date.today().isoformat(),
+        "hours": 8.0,
+        "vehicle_type": "coche_personal",
+        "distance_origin": "NAVE",
+        "meals": True,
+    }
+    create_response = user_client.post("/time-entries/", json=payload)
+    assert create_response.status_code == 201
+    entry_id = create_response.json()["id"]
+
+    first_upload = user_client.post(
+        f"/time-entries/{entry_id}/upload-ticket",
+        files={"file": ("ticket-1.jpg", BytesIO(b"fake-jpg-image"), "image/jpeg")},
+    )
+    second_upload = user_client.post(
+        f"/time-entries/{entry_id}/upload-ticket",
+        files={"file": ("ticket-2.jpg", BytesIO(b"fake-jpg-image-2"), "image/jpeg")},
+    )
+    assert second_upload.status_code == 200
+
+    attachments = second_upload.json()["ticket_attachments"]
+    attachment_to_delete = attachments[0]["id"]
+
+    delete_response = user_client.delete(
+        f"/time-entries/{entry_id}/ticket-attachments/{attachment_to_delete}"
+    )
+    assert delete_response.status_code == 200
+    assert len(delete_response.json()["ticket_attachments"]) == 1
