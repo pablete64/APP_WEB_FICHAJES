@@ -3,10 +3,12 @@ from sqlalchemy import func
 from fastapi import HTTPException, status
 from typing import List
 from datetime import date
+import os
 
 from app.models.time_entry import TimeEntry
 from app.models.project import Project
 from app.models.task import Task
+from app.models.time_entry_ticket import TimeEntryTicket
 from app.schemas.time_entry import TimeEntryCreate
 from app.services.audit_service import log_event
 
@@ -197,7 +199,7 @@ def update_entry(db: Session, entry_id: str, entry_in: TimeEntryCreate, actor_id
     # Update logistics and ticket fields
     db_entry.vehicle_type = entry_in.vehicle_type
     db_entry.meals = entry_in.meals
-    db_entry.meal_ticket_amount = entry_in.meal_ticket_amount
+    db_entry.meal_ticket_amount = entry_in.meal_ticket_amount if entry_in.meals else None
     db_entry.distance_origin = entry_in.distance_origin
     db_entry.trip_type = entry_in.trip_type
     db_entry.travel_time = entry_in.travel_time or 0.0
@@ -205,7 +207,16 @@ def update_entry(db: Session, entry_id: str, entry_in: TimeEntryCreate, actor_id
     # Note: meal_ticket_photo usually comes from separate upload, but allow setting here if provided
     if entry_in.meal_ticket_photo is not None:
         db_entry.meal_ticket_photo = entry_in.meal_ticket_photo
-    
+
+    if not entry_in.meals:
+        for attachment in list(db_entry.ticket_attachments):
+            if attachment.file_path.startswith("/uploads/"):
+                disk_path = os.path.join("/app", attachment.file_path.lstrip("/"))
+                if os.path.exists(disk_path):
+                    os.remove(disk_path)
+            db.delete(attachment)
+        db_entry.meal_ticket_photo = None
+
     new_values = {
         "hours": final_hours,
         "overtime": final_overtime,

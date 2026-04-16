@@ -256,13 +256,15 @@ export default function TimeEntryManagement() {
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className="flex justify-end gap-2">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleEdit(e)}>
+                                                <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-muted-foreground hover:text-primary" onClick={() => handleEdit(e)}>
                                                     <Edit2 className="h-4 w-4" />
+                                                    Editar
                                                 </Button>
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10">
+                                                        <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10">
                                                             <Trash2 className="h-4 w-4" />
+                                                            Borrar
                                                         </Button>
                                                     </AlertDialogTrigger>
                                                     <AlertDialogContent>

@@ -220,11 +220,13 @@ export default function ProjectsPage() {
                 <p className="text-xs text-muted-foreground mt-1 truncate">{p.location || "—"}</p>
               </div>
              <div className="flex gap-1">
-              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => handleOpenEdit(p)}>
+              <Button variant="ghost" size="sm" className="h-9 gap-1.5" onClick={() => handleOpenEdit(p)}>
                 <Edit className="h-4 w-4 text-primary" />
+                Editar
               </Button>
-              <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9" onClick={() => handleDelete(p.id)}>
+              <Button variant="ghost" size="sm" className="shrink-0 h-9 gap-1.5" onClick={() => handleDelete(p.id)}>
                 <Trash2 className="h-4 w-4 text-destructive" />
+                Borrar
               </Button>
             </div>
             </div>
@@ -267,11 +269,13 @@ export default function ProjectsPage() {
                   </TableCell>
                    <TableCell>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(p)}>
+                      <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => handleOpenEdit(p)}>
                         <Edit className="h-4 w-4 text-primary" />
+                        Editar
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDelete(p.id)}>
+                      <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => handleDelete(p.id)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
+                        Borrar
                       </Button>
                     </div>
                   </TableCell>

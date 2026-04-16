@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     Dialog,
     DialogContent,
@@ -18,9 +19,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Loader2 } from "lucide-react";
-import { TimeEntryResponse, TimeEntryCreate } from "@/services/timeEntryService";
-import { TicketAttachmentsMenu } from "@/components/TicketAttachmentsMenu";
+import { Loader2, ExternalLink, Trash2, Upload } from "lucide-react";
+import { TimeEntryResponse, TimeEntryCreate, timeEntryService } from "@/services/timeEntryService";
 
 interface TimeEntryDialogProps {
     open: boolean;
@@ -41,8 +41,10 @@ export function TimeEntryDialog({
     tasks,
     onSave
 }: TimeEntryDialogProps) {
+    const queryClient = useQueryClient();
     const [loading, setLoading] = useState(false);
     const [managedEntry, setManagedEntry] = useState<TimeEntryResponse | null>(entry || null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [formData, setFormData] = useState<Partial<TimeEntryCreate>>({
         date: new Date().toISOString().split("T")[0],
         hours: 0,
@@ -113,6 +115,43 @@ export function TimeEntryDialog({
         } finally {
             setLoading(false);
         }
+    };
+
+    const syncManagedEntry = (updatedEntry: TimeEntryResponse) => {
+        setManagedEntry(updatedEntry);
+        queryClient.invalidateQueries({ queryKey: ["allTimeEntries"] });
+        queryClient.invalidateQueries({ queryKey: ["myEntries"] });
+    };
+
+    const uploadMutation = useMutation({
+        mutationFn: async (files: File[]) => {
+            if (!managedEntry) throw new Error("Fichaje no disponible");
+            let updated: TimeEntryResponse | null = null;
+            for (const file of files) {
+                updated = await timeEntryService.uploadTicketPhoto(managedEntry.id, file);
+            }
+            return updated;
+        },
+        onSuccess: (updated) => {
+            if (updated) syncManagedEntry(updated);
+        },
+    });
+
+    const deleteAttachmentMutation = useMutation({
+        mutationFn: async (attachmentId: string) => {
+            if (!managedEntry) throw new Error("Fichaje no disponible");
+            return timeEntryService.deleteTicketAttachment(managedEntry.id, attachmentId);
+        },
+        onSuccess: (updated) => {
+            syncManagedEntry(updated);
+        },
+    });
+
+    const handleAttachmentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+        await uploadMutation.mutateAsync(files);
+        e.target.value = "";
     };
 
     return (
@@ -255,7 +294,11 @@ export function TimeEntryDialog({
                                     <Switch
                                         id="meals"
                                         checked={formData.meals}
-                                        onCheckedChange={(val) => setFormData({ ...formData, meals: val })}
+                                        onCheckedChange={(val) => setFormData({
+                                            ...formData,
+                                            meals: val,
+                                            meal_ticket_amount: val ? formData.meal_ticket_amount : undefined,
+                                        })}
                                     />
                                     <Label htmlFor="meals" className="cursor-pointer font-bold text-primary">Cobrar Dieta</Label>
                                 </div>
@@ -313,16 +356,68 @@ export function TimeEntryDialog({
                                 <Label className="text-xs font-semibold uppercase text-muted-foreground italic">
                                     Tickets adjuntos
                                 </Label>
-                                <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-3">
-                                    <TicketAttachmentsMenu
-                                        entryId={managedEntry.id}
-                                        attachments={managedEntry.ticket_attachments || []}
-                                        canManage
-                                        onEntryUpdated={setManagedEntry}
-                                    />
-                                    <p className="text-sm text-muted-foreground">
-                                        Gestiona los tickets de este fichaje desde el menu.
-                                    </p>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    multiple
+                                    className="hidden"
+                                    onChange={handleAttachmentUpload}
+                                />
+                                <div className="rounded-md border bg-muted/30 p-3 space-y-3">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <p className="text-sm text-muted-foreground">
+                                            {managedEntry.ticket_attachments?.length
+                                                ? `${managedEntry.ticket_attachments.length} ticket(s) adjunto(s)`
+                                                : "No hay tickets adjuntos en este fichaje."}
+                                        </p>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="gap-2"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            disabled={uploadMutation.isPending}
+                                        >
+                                            {uploadMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                                            Subir ticket
+                                        </Button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {(managedEntry.ticket_attachments || []).map((attachment, index) => (
+                                            <div key={attachment.id} className="flex items-center justify-between gap-3 rounded border bg-background px-3 py-2">
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-medium">Ticket {index + 1}</p>
+                                                    <p className="truncate text-xs text-muted-foreground">
+                                                        {attachment.original_filename || attachment.file_path.split("/").pop()}
+                                                    </p>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="gap-1.5"
+                                                        onClick={() => window.open(attachment.file_path, "_blank")}
+                                                    >
+                                                        <ExternalLink className="h-4 w-4" />
+                                                        Abrir
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="gap-1.5 text-destructive hover:text-destructive"
+                                                        onClick={() => deleteAttachmentMutation.mutate(attachment.id)}
+                                                        disabled={deleteAttachmentMutation.isPending}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                        Borrar
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         )}
