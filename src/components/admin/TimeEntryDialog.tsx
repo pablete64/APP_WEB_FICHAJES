@@ -332,23 +332,6 @@ export function TimeEntryDialog({
                             )}
                         </div>
 
-                        <div className="grid grid-cols-1 gap-4 mt-6 pt-4 border-t">
-                            <div className="space-y-2 opacity-80">
-                                <Label className="text-xs font-semibold uppercase text-muted-foreground flex items-center gap-2">
-                                    Tiempo de desplazamiento
-                                    <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded italic normal-case">Dato de Proyecto</span>
-                                </Label>
-                                <div className="flex items-center gap-2 bg-muted/30 p-2 rounded border border-dashed text-sm">
-                                    <span className="font-bold text-blue-600">
-                                        {(() => {
-                                            const p = projects.find(p => p.id === formData.project_id);
-                                            return p?.travel_time ? (p.travel_time / 60).toFixed(2) : "0.00";
-                                        })()}h
-                                    </span>
-                                    <span className="text-muted-foreground text-xs">(Calculado automáticamente para el informe final)</span>
-                                </div>
-                            </div>
-                        </div>
                     </div>
 
                         {managedEntry && (
