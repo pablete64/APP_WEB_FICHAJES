@@ -13,6 +13,38 @@ from app.services import time_entry_service
 UPLOADS_DIR = "/app/uploads/tickets"
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 
+ALLOWED_UPLOAD_MIME_TYPES = {
+    "image/jpeg",
+    "image/jpg",
+    "image/pjpeg",
+    "image/png",
+    "image/webp",
+    "image/heic",
+    "image/heif",
+    "image/heic-sequence",
+    "image/heif-sequence",
+    "application/octet-stream",
+}
+
+ALLOWED_UPLOAD_EXTENSIONS = {
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".webp",
+    ".heic",
+    ".heif",
+}
+
+
+def _is_allowed_ticket_upload(file: UploadFile) -> bool:
+    content_type = (file.content_type or "").lower()
+    extension = os.path.splitext(file.filename or "")[1].lower()
+
+    if content_type in ALLOWED_UPLOAD_MIME_TYPES and (extension in ALLOWED_UPLOAD_EXTENSIONS or not extension):
+        return True
+
+    return extension in ALLOWED_UPLOAD_EXTENSIONS
+
 router = APIRouter(prefix="/time-entries", tags=["Time Entries"])
 
 @router.post("/", response_model=TimeEntryResponse, status_code=status.HTTP_201_CREATED)
@@ -66,10 +98,8 @@ def upload_ticket_photo(
     if entry.user_id != current_user.id and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="Sin permiso")
 
-    # Validate file type
-    allowed = {"image/jpeg", "image/png", "image/webp", "image/heic"}
-    if file.content_type not in allowed:
-        raise HTTPException(status_code=400, detail="Formato no válido. Usa JPG, PNG o WebP.")
+    if not _is_allowed_ticket_upload(file):
+        raise HTTPException(status_code=400, detail="Formato no válido. Usa JPG, PNG, WebP, HEIC o HEIF.")
 
     ext = os.path.splitext(file.filename or "")[1] or ".jpg"
     filename = f"{uuid.uuid4()}{ext}"

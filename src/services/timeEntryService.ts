@@ -34,18 +34,10 @@ export const timeEntryService = {
     uploadTicketPhoto: async (entryId: string, file: File): Promise<TimeEntryResponse> => {
         const form = new FormData();
         form.append('file', file);
-        const BASE = (import.meta as any).env?.VITE_API_URL ?? '/api';
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token') || '';
-        const res = await fetch(`${BASE}/time-entries/${entryId}/upload-ticket`, {
+        return fetchApi<TimeEntryResponse>(`/time-entries/${entryId}/upload-ticket`, {
             method: 'POST',
-            headers: { Authorization: `Bearer ${token}` },
             body: form,
         });
-        if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            throw new Error(err.detail || 'Error al subir la foto');
-        }
-        return res.json();
     },
 
     getMyEntries: async (): Promise<TimeEntryResponse[]> => {

@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 import pytest
+from io import BytesIO
 
 def get_project_by_type(projects, type_name):
     return next((p for p in projects if p.type == type_name), None)
@@ -203,3 +204,54 @@ def test_time_entries_rbac_admin_vs_user(user_client, admin_client, seed_project
     # Check deletion
     assert len(admin_client.get("/time-entries/").json()) == 0
 
+
+def test_upload_ticket_photo_accepts_iphone_heif(user_client, admin_client, seed_projects, seed_tasks, normal_user):
+    project = get_project_by_type(seed_projects, "standard")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
+    task = get_task_by_code(seed_tasks, "400")
+
+    payload = {
+        "project_id": project.id,
+        "task_id": task.id,
+        "date": date.today().isoformat(),
+        "hours": 8.0,
+        "vehicle_type": "coche_personal",
+        "distance_origin": "NAVE",
+        "meals": True,
+    }
+    create_response = user_client.post("/time-entries/", json=payload)
+    assert create_response.status_code == 201
+    entry_id = create_response.json()["id"]
+
+    upload_response = user_client.post(
+        f"/time-entries/{entry_id}/upload-ticket",
+        files={"file": ("ticket.heif", BytesIO(b"fake-heif-image"), "image/heif")},
+    )
+    assert upload_response.status_code == 200
+    assert upload_response.json()["meal_ticket_photo"].endswith(".heif")
+
+
+def test_upload_ticket_photo_accepts_valid_extension_with_generic_mime(user_client, admin_client, seed_projects, seed_tasks, normal_user):
+    project = get_project_by_type(seed_projects, "standard")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
+    task = get_task_by_code(seed_tasks, "400")
+
+    payload = {
+        "project_id": project.id,
+        "task_id": task.id,
+        "date": date.today().isoformat(),
+        "hours": 8.0,
+        "vehicle_type": "coche_personal",
+        "distance_origin": "NAVE",
+        "meals": True,
+    }
+    create_response = user_client.post("/time-entries/", json=payload)
+    assert create_response.status_code == 201
+    entry_id = create_response.json()["id"]
+
+    upload_response = user_client.post(
+        f"/time-entries/{entry_id}/upload-ticket",
+        files={"file": ("ticket.HEIC", BytesIO(b"fake-heic-image"), "application/octet-stream")},
+    )
+    assert upload_response.status_code == 200
+    assert upload_response.json()["meal_ticket_photo"].lower().endswith(".heic")

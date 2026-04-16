@@ -30,6 +30,9 @@ export const fetchApi = async <T>(
 
     if (!response.ok) {
         let errorMessage = 'An error occurred';
+        if (response.status === 413) {
+            errorMessage = 'La foto es demasiado grande. Reduce el tamano o usa una imagen mas ligera.';
+        }
         try {
             const errorData = await response.json();
             errorMessage = errorData.detail || errorData.message || errorMessage;

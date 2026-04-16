@@ -17,6 +17,86 @@ import { CheckCircle2, Clock, Upload, X, Receipt, Car, Info } from "lucide-react
 const rolesMatch = (a: string, b: string) =>
   a.localeCompare(b, "es", { sensitivity: "base" }) === 0;
 
+const MAX_TICKET_IMAGE_DIMENSION = 1600;
+const TARGET_TICKET_SIZE_BYTES = 1 * 1024 * 1024;
+
+const loadImageFromFile = (file: File): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const imageUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(imageUrl);
+      resolve(img);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(imageUrl);
+      reject(new Error("No se pudo cargar la imagen seleccionada."));
+    };
+    img.src = imageUrl;
+  });
+
+const canvasToBlob = (canvas: HTMLCanvasElement, quality: number): Promise<Blob> =>
+  new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob);
+        return;
+      }
+      reject(new Error("No se pudo procesar la imagen."));
+    }, "image/jpeg", quality);
+  });
+
+const optimizeTicketImage = async (file: File): Promise<File> => {
+  if (!file.type.startsWith("image/")) return file;
+
+  const image = await loadImageFromFile(file);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return file;
+
+  let width = image.naturalWidth;
+  let height = image.naturalHeight;
+  const initialScale = Math.min(
+    1,
+    MAX_TICKET_IMAGE_DIMENSION / Math.max(width, height)
+  );
+  width = Math.max(1, Math.round(width * initialScale));
+  height = Math.max(1, Math.round(height * initialScale));
+
+  let quality = 0.82;
+  let blob: Blob | null = null;
+
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    canvas.width = width;
+    canvas.height = height;
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(image, 0, 0, width, height);
+
+    blob = await canvasToBlob(canvas, quality);
+    if (blob.size <= TARGET_TICKET_SIZE_BYTES) break;
+
+    if (quality > 0.5) {
+      quality = Math.max(0.5, quality - 0.08);
+      continue;
+    }
+
+    width = Math.max(900, Math.round(width * 0.8));
+    height = Math.max(900, Math.round(height * 0.8));
+  }
+
+  if (!blob) return file;
+
+  if (blob.size >= file.size && file.size <= TARGET_TICKET_SIZE_BYTES) {
+    return file;
+  }
+
+  const baseName = file.name.replace(/\.[^.]+$/, "") || "ticket";
+  return new File([blob], `${baseName}.jpg`, {
+    type: "image/jpeg",
+    lastModified: Date.now(),
+  });
+};
+
 export default function LogHours() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -88,11 +168,18 @@ export default function LogHours() {
     setTicketPreview(null);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
     if (!f) return;
-    setTicketFile(f);
-    setTicketPreview(URL.createObjectURL(f));
+    try {
+      const optimizedFile = await optimizeTicketImage(f);
+      setTicketFile(optimizedFile);
+      setTicketPreview(URL.createObjectURL(optimizedFile));
+    } catch {
+      setTicketFile(f);
+      setTicketPreview(URL.createObjectURL(f));
+      toast.error("No se pudo optimizar la foto. Se intentara subir el archivo original.");
+    }
   };
 
   const mutation = useMutation({
@@ -365,7 +452,7 @@ export default function LogHours() {
                             </Button>
                           )}
                           <p className="text-xs text-muted-foreground mt-1">
-                            Opcional. Formatos admitidos: JPG, PNG, WebP.
+                            Opcional. La foto se optimiza automaticamente antes de subirla.
                           </p>
                         </div>
                       </div>
