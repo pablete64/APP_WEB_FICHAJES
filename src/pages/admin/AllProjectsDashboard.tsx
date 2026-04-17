@@ -52,7 +52,7 @@ export default function AllProjectsDashboard({
     const m: Record<string, { id: string; name: string; hours: number }> = {};
     projectReport.forEach((r: any) => {
       if (!m[r.project_id]) m[r.project_id] = { id: r.project_id, name: r.project_name, hours: 0 };
-      m[r.project_id].hours += r.total_hours;
+      m[r.project_id].hours += (r.total_hours || 0) + (r.total_overtime || 0);
     });
     return Object.values(m).sort((a, b) => b.hours - a.hours);
   }, [projectReport]);

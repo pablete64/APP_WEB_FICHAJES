@@ -28,6 +28,13 @@ import { TimeEntryDialog } from "@/components/admin/TimeEntryDialog";
 import { TimeEntryCreate } from "@/services/timeEntryService";
 import { TicketAttachmentsMenu } from "@/components/TicketAttachmentsMenu";
 
+const formatSpanishDate = (value: string) => {
+    if (!value) return "—";
+    const parsed = new Date(`${value}T00:00:00`);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return parsed.toLocaleDateString("es-ES");
+};
+
 export default function TimeEntryManagement() {
     const queryClient = useQueryClient();
     const [selectedEntry, setSelectedEntry] = useState<any | null>(null);
@@ -135,7 +142,7 @@ export default function TimeEntryManagement() {
                         return (
                             <div key={e.id} className={`rounded-lg border p-4 space-y-2 ${isOvertime ? "border-destructive/40 bg-destructive/5" : "bg-card"}`}>
                                 <div className="flex items-center justify-between gap-2">
-                                    <span className="font-semibold text-sm">{e.date}</span>
+                                    <span className="font-semibold text-sm">{formatSpanishDate(e.date)}</span>
                                     <span className={`text-base font-bold ${isOvertime ? "text-destructive" : "text-primary"}`}>
                                         {e.hours}h {isOvertime && <AlertCircle className="h-3.5 w-3.5 inline ml-1" />}
                                     </span>
@@ -230,7 +237,7 @@ export default function TimeEntryManagement() {
 
                                 return (
                                     <TableRow key={e.id} className={isOvertime ? "bg-destructive/5" : ""}>
-                                        <TableCell>{e.date}</TableCell>
+                                        <TableCell>{formatSpanishDate(e.date)}</TableCell>
                                         <TableCell className="font-medium">{user?.name || e.user_id.split("-")[0]}</TableCell>
                                         <TableCell className="max-w-[200px] truncate">
                                             {project ? `[${project.code}] ${project.name}` : "—"}

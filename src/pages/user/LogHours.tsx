@@ -100,9 +100,10 @@ const optimizeTicketImage = async (file: File): Promise<File> => {
 export default function LogHours() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const today = new Date().toISOString().split("T")[0];
   const [step, setStep] = useState(1);
   const [projectId, setProjectId] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(today);
   const [isHoliday, setIsHoliday] = useState(false);
   const [taskCode, setTaskCode] = useState("");
   const [hours, setHours] = useState("");
@@ -157,7 +158,7 @@ export default function LogHours() {
   const reset = () => {
     setStep(1);
     setProjectId("");
-    setDate(new Date().toISOString().split("T")[0]);
+    setDate(today);
     setIsHoliday(false);
     setTaskCode("");
     setHours("");
@@ -286,10 +287,19 @@ export default function LogHours() {
           {/* ── Step 2: Date ── */}
           {step === 2 && (
             <>
-              <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
+              <Input
+                type="date"
+                value={date}
+                min={today}
+                max={today}
+                onChange={e => setDate(e.target.value === today ? e.target.value : today)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Solo puedes registrar horas para la fecha de hoy.
+              </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button variant="outline" onClick={() => setStep(1)} className="flex-1">Atrás</Button>
-                <Button onClick={() => setStep(3)} className="flex-1">Siguiente</Button>
+                <Button onClick={() => setStep(3)} className="flex-1" disabled={date !== today}>Siguiente</Button>
               </div>
             </>
           )}

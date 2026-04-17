@@ -44,6 +44,7 @@ export const fetchApi = async <T>(
         if (response.status === 401) {
             sessionStorage.removeItem('token');
             sessionStorage.removeItem('user'); // Si lo guardamos
+            window.dispatchEvent(new Event('auth:unauthorized'));
         }
 
         throw new ApiError(response.status, errorMessage);

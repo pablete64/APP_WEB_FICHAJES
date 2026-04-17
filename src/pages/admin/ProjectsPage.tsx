@@ -125,8 +125,14 @@ export default function ProjectsPage() {
     setOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    deleteMutation.mutate(id);
+  const handleDelete = (project: { id: string; code: string; name: string }) => {
+    const confirmed = window.confirm(
+      `¿Seguro que quieres eliminar el proyecto [${project.code}] ${project.name}? Esta acción no se puede deshacer.`
+    );
+
+    if (!confirmed) return;
+
+    deleteMutation.mutate(project.id);
   };
 
   const toggleUser = (u: any) => {
@@ -226,7 +232,7 @@ export default function ProjectsPage() {
                 <Edit className="h-4 w-4 text-primary" />
                 Editar
               </Button>
-              <Button variant="ghost" size="sm" className="shrink-0 h-9 gap-1.5" onClick={() => handleDelete(p.id)}>
+              <Button variant="ghost" size="sm" className="shrink-0 h-9 gap-1.5" onClick={() => handleDelete(p)}>
                 <Trash2 className="h-4 w-4 text-destructive" />
                 Borrar
               </Button>
@@ -275,7 +281,7 @@ export default function ProjectsPage() {
                         <Edit className="h-4 w-4 text-primary" />
                         Editar
                       </Button>
-                      <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => handleDelete(p.id)}>
+                      <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => handleDelete(p)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                         Borrar
                       </Button>

@@ -8,6 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { History } from "lucide-react";
 import { TicketAttachmentsMenu } from "@/components/TicketAttachmentsMenu";
 
+const formatSpanishDate = (value: string) => {
+  if (!value) return "—";
+  const parsed = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString("es-ES");
+};
+
 export default function HistoryPage() {
   const { data: rawEntries = [] } = useQuery({ queryKey: ["myEntries"], queryFn: timeEntryService.getMyEntries });
   const { data: projects = [] } = useQuery({ queryKey: ["myProjects"], queryFn: projectService.getMyProjects });
@@ -38,7 +45,7 @@ export default function HistoryPage() {
           return (
             <div key={e.id} className="rounded-lg border bg-card p-4 space-y-2">
               <div className="flex items-center justify-between gap-2">
-                <span className="font-semibold text-sm">{e.date}</span>
+                <span className="font-semibold text-sm">{formatSpanishDate(e.date)}</span>
                 <div className="flex gap-1.5">
                   {e.is_holiday && <Badge variant="outline" className="text-xs">Festivo</Badge>}
                   {e.overtime_hours > 0 && (
@@ -104,7 +111,7 @@ export default function HistoryPage() {
               const project = getProject(e.project_id);
               return (
                 <TableRow key={e.id}>
-                  <TableCell className="font-medium">{e.date}{e.is_holiday && <Badge variant="outline" className="ml-2 text-xs">Festivo</Badge>}</TableCell>
+                  <TableCell className="font-medium">{formatSpanishDate(e.date)}{e.is_holiday && <Badge variant="outline" className="ml-2 text-xs">Festivo</Badge>}</TableCell>
                   <TableCell>{project ? `[${project.code}] ${project.name}` : "—"}</TableCell>
                   <TableCell>{task ? `${task.code} – ${task.name}` : "—"}</TableCell>
                   <TableCell className="text-right">{e.hours}h</TableCell>

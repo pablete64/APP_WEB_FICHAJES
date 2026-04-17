@@ -39,12 +39,12 @@ def get_analytics_summary(db: Session, **filters) -> dict:
         }
 
     # Data Structures for aggregation
-    heatmap_data = {} # {user: {date: hours}}
-    daily_cats = {}   # {date: {cat: hours}}
-    user_hrs = {}     # {user: hours}
-    task_hrs = {}     # {task: hours}
+    heatmap_data = {} # {user: {date: effective_hours}}
+    daily_cats = {}   # {date: {cat: effective_hours}}
+    user_hrs = {}     # {user: effective_hours}
+    task_hrs = {}     # {task: effective_hours}
     daily_sum = {}    # {date: {hours: 0, count: 0}}
-    cat_dist = {}     # {cat: hours}
+    cat_dist = {}     # {cat: effective_hours}
     logistics = {}    # {user: {personal: 0, company: 0, km_cost: 0.0}}
     travel_by_user = {}  # {user: total_minutes}
     dietas = {}       # {user: {yes: 0, no: 0, cost: 0.0}}
@@ -58,31 +58,32 @@ def get_analytics_summary(db: Session, **filters) -> dict:
         u = e.user_name
         t = e.task_name
         c = e.task_category
-        h = float(e.hours)  # Only normal hours in analytics (no overtime)
+        h = float(e.hours or 0)
         ovt = float(e.overtime_hours or 0)
+        effective_h = h + ovt
         total_ovt += ovt
         
         # 1. Heatmap
         if u not in heatmap_data: heatmap_data[u] = {}
-        heatmap_data[u][d_str] = heatmap_data[u].get(d_str, 0) + h
+        heatmap_data[u][d_str] = heatmap_data[u].get(d_str, 0) + effective_h
 
         # 2. Daily Categories
         if d_str not in daily_cats: daily_cats[d_str] = {}
-        daily_cats[d_str][c] = daily_cats[d_str].get(c, 0) + h
+        daily_cats[d_str][c] = daily_cats[d_str].get(c, 0) + effective_h
 
         # 3. User Totals
-        user_hrs[u] = user_hrs.get(u, 0) + h
+        user_hrs[u] = user_hrs.get(u, 0) + effective_h
 
         # 4. Task Totals
-        task_hrs[t] = task_hrs.get(t, 0) + h
+        task_hrs[t] = task_hrs.get(t, 0) + effective_h
 
         # 5. Daily Summary
         if d_str not in daily_sum: daily_sum[d_str] = {"hours": 0, "count": 0}
-        daily_sum[d_str]["hours"] += h
+        daily_sum[d_str]["hours"] += effective_h
         daily_sum[d_str]["count"] += 1
 
         # 6. Category Dist
-        cat_dist[c] = cat_dist.get(c, 0) + h
+        cat_dist[c] = cat_dist.get(c, 0) + effective_h
 
         # 7. Logistics KM
         if u not in logistics: logistics[u] = {"personal": 0, "company": 0, "km_cost": 0.0}
@@ -128,11 +129,11 @@ def get_analytics_summary(db: Session, **filters) -> dict:
 
         # 10. Skills (Radar)
         if u not in skills: skills[u] = {}
-        skills[u][c] = skills[u].get(c, 0) + h
+        skills[u][c] = skills[u].get(c, 0) + effective_h
 
         # 11. Treemap
         if c not in treemap_raw: treemap_raw[c] = {}
-        treemap_raw[c][t] = treemap_raw[c].get(t, 0) + h
+        treemap_raw[c][t] = treemap_raw[c].get(t, 0) + effective_h
 
     # Finalizar agregación de dietas tras procesar todos los registros
     for (u, d_str), data in _day_diets.items():

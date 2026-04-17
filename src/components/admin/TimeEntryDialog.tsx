@@ -304,15 +304,6 @@ export function TimeEntryDialog({
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label>Origen (Municipio/CP)</Label>
-                                <Input
-                                    placeholder="Ej: Vigo, 36201"
-                                    value={formData.distance_origin || ""}
-                                    onChange={(e) => setFormData({ ...formData, distance_origin: e.target.value })}
-                                />
-                            </div>
-
                             {formData.meals && (
                                 <div className="space-y-2 bg-primary/5 p-3 rounded-lg border border-primary/20 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
                                     <Label className="text-[10px] font-bold uppercase text-primary">

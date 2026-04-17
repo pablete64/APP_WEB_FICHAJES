@@ -18,13 +18,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     try {
+      const savedToken = sessionStorage.getItem("token");
       const savedUser = sessionStorage.getItem("user");
-      if (savedUser) {
+      if (savedToken && savedUser) {
         setUser(JSON.parse(savedUser));
+      } else {
+        sessionStorage.removeItem("token");
+        sessionStorage.removeItem("user");
       }
     } catch (e) {
       console.error("Failed to parse user from sessionStorage", e);
     }
+  }, []);
+
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      setUser(null);
+    };
+
+    window.addEventListener("auth:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
   }, []);
 
   const login = async (name: string, password: string): Promise<boolean> => {
