@@ -84,7 +84,13 @@ def _validate_time_entry_business_rules(db: Session, entry_in: TimeEntryCreate, 
         ProjectUser.user_id == target_user_id
     ).first()
     
-    effective_role = project_user.role if project_user else user.role
+    effective_role = project_user.role if project_user else ""
+
+    if task.allowed_roles and not effective_role:
+         raise HTTPException(
+             status_code=status.HTTP_400_BAD_REQUEST,
+             detail="User must have a role assigned in the selected project"
+         )
          
     if task.allowed_roles and effective_role not in task.allowed_roles:
          raise HTTPException(

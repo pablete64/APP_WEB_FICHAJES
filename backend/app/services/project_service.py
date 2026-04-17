@@ -97,7 +97,7 @@ def list_projects_for_user(db: Session, user_id: str) -> List[Project]:
         Project.deleted_at == None
     ).all()
 
-def assign_user_to_project(db: Session, project_id: str, user_id: str):
+def assign_user_to_project(db: Session, project_id: str, user_id: str, role: str | None = None):
     project = get_project_by_id(db, project_id)
     if not project:
          raise HTTPException(status_code=404, detail="Project not found")
@@ -111,9 +111,10 @@ def assign_user_to_project(db: Session, project_id: str, user_id: str):
     if existing:
         raise HTTPException(status_code=409, detail="User is already assigned to this project")
 
-    # To support assigning a role dynamically in the assign_user_to_project router, we might need a role.
-    # Currently the router has no role param, so we fallback to user's general role
-    assoc = ProjectUser(project_id=project_id, user_id=user_id, role=user.role)
+    if not role:
+        raise HTTPException(status_code=400, detail="A project role is required to assign the user")
+
+    assoc = ProjectUser(project_id=project_id, user_id=user_id, role=role)
     db.add(assoc)
     db.commit()
     return True

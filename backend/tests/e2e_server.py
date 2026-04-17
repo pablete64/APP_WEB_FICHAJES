@@ -29,6 +29,7 @@ from app.auth.security import get_password_hash
 from app.models.user import User
 from app.models.task import Task
 from app.models.project import Project
+from app.models.project_user import ProjectUser
 
 if __name__ == "__main__":
     # Ensure definitions map to mocked ARRAY schemas
@@ -41,7 +42,6 @@ if __name__ == "__main__":
             employee_code="admin",
             name="Administrator",
             password_hash=get_password_hash("admin123"),
-            role="Management",
             is_admin=True,
         ))
     
@@ -50,7 +50,6 @@ if __name__ == "__main__":
             employee_code="USER001",
             name="E2E Regular User",
             password_hash=get_password_hash("user123"),
-            role="Proyectistas Mecánicos",
             is_admin=False,
         ))
         
@@ -64,9 +63,10 @@ if __name__ == "__main__":
     user1 = db.query(User).filter(User.employee_code == "USER001").first()
     if not db.query(Project).first():
         p = Project(code="PRJ-SEED", name="E2E Base Project", location="Madrid", start_date=date(2025,1,1), type="standard")
-        if user1:
-            p.users.append(user1)
         db.add(p)
+        db.flush()
+        if user1:
+            db.add(ProjectUser(project_id=p.id, user_id=user1.id, role="Proyectistas Mecánicos"))
     
     db.commit()
     db.close()

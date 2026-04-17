@@ -68,7 +68,7 @@ export default function ProjectsPage() {
   const [travelTime, setTravelTime] = useState("0");
   const [kmRate, setKmRate] = useState("0.19");
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
-  const [selectedUsers, setSelectedUsers] = useState<{user_id: string, role: string}[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<{user_id: string, role?: string}[]>([]);
 
   const [projectType, setProjectType] = useState<"standard" | "offer" | "non-productive">("standard");
 
@@ -81,7 +81,7 @@ export default function ProjectsPage() {
 
   };
 
-  const nonAdminUsers = users.filter((u: any) => u.role !== "Admin" && u.role !== "Management");
+  const nonAdminUsers = users.filter((u: any) => !u.is_admin);
   
   const ROLES = [
     "PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS",
@@ -89,7 +89,7 @@ export default function ProjectsPage() {
   ];
 
   const handleSave = () => {
-    if (!name || !code) return;
+    if (!name || !code || selectedUsers.some((u) => !u.role)) return;
     const payload = {
       name,
       code,
@@ -134,7 +134,7 @@ export default function ProjectsPage() {
       if (prev.some(x => x.user_id === u.id)) {
         return prev.filter(x => x.user_id !== u.id);
       }
-      return [...prev, { user_id: u.id, role: u.role }];
+      return [...prev, { user_id: u.id }];
     });
   };
 
@@ -188,7 +188,7 @@ export default function ProjectsPage() {
                          {sel && (
                            <Select value={sel.role} onValueChange={(val) => updateRole(u.id, val)}>
                               <SelectTrigger className="h-7 text-xs w-[180px]">
-                                <SelectValue />
+                                <SelectValue placeholder="Selecciona rol" />
                               </SelectTrigger>
                               <SelectContent>
                                  {ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
@@ -201,7 +201,9 @@ export default function ProjectsPage() {
                 </div>
               </div>
 
-               <Button onClick={handleSave} className="w-full">{editingProjectId ? "Actualizar Proyecto" : "Crear Proyecto"}</Button>
+               <Button onClick={handleSave} className="w-full" disabled={selectedUsers.some((u) => !u.role)}>
+                 {editingProjectId ? "Actualizar Proyecto" : "Crear Proyecto"}
+               </Button>
             </div>
           </DialogContent>
         </Dialog>

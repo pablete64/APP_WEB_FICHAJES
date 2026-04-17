@@ -9,7 +9,6 @@ def test_create_user_ok(admin_client):
     payload = {
         "employee_code": "new001",
         "name": "New User",
-        "role": "Programadores",
         "password": "password123",
         "is_admin": False
     }
@@ -26,7 +25,6 @@ def test_create_user_duplicate_code(admin_client, normal_user):
     payload = {
         "employee_code": normal_user.employee_code,  # ya existe
         "name": "Fake Name",
-        "role": "Programadores",
         "password": "password123"
     }
     response = admin_client.post("/users/", json=payload)

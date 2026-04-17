@@ -4,7 +4,7 @@ from app.schemas.time_entry import TimeEntryCreate
 from datetime import date, timedelta
 from fastapi import HTTPException
 
-def test_task_allowed_roles_validation(db_session, normal_user, seed_projects, seed_tasks):
+def test_task_allowed_roles_validation(db_session, normal_user, seed_projects, seed_tasks, assign_project_role):
     # normal_user role: "Assemblers"
     project = seed_projects[0]
     task = seed_tasks[0]  # This has allowed_roles=[] (Empty means allowed for everyone? or none? In our logic if task.allowed_roles it triggers the inner check.)
@@ -14,7 +14,7 @@ def test_task_allowed_roles_validation(db_session, normal_user, seed_projects, s
     db_session.add(task)
     db_session.commit()
 
-    project_service.assign_user_to_project(db_session, project.id, normal_user.id)
+    assign_project_role(project.id, normal_user.id, "Montadores")
 
     entry_in = TimeEntryCreate(
         project_id=project.id,
@@ -31,11 +31,11 @@ def test_task_allowed_roles_validation(db_session, normal_user, seed_projects, s
     assert exc_info.value.status_code == 403
     assert "not allowed for task" in str(exc_info.value.detail)
 
-def test_update_entry_validation_triggers(db_session, admin_user, normal_user, seed_projects, seed_tasks):
+def test_update_entry_validation_triggers(db_session, admin_user, normal_user, seed_projects, seed_tasks, assign_project_role):
     # Create valid entry first
     project = seed_projects[0]
     task = seed_tasks[3]
-    project_service.assign_user_to_project(db_session, project.id, normal_user.id)
+    assign_project_role(project.id, normal_user.id, "Montadores")
     
     entry_in = TimeEntryCreate(
         project_id=project.id,

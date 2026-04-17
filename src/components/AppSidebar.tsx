@@ -82,7 +82,7 @@ export function AppSidebar() {
         </SidebarMenu>
         {!collapsed && user && (
           <div className="px-3 pb-3 text-xs text-sidebar-foreground/60">
-            {user.name} · {isAdmin ? "Admin" : user.role}
+            {user.name} · {isAdmin ? "Admin" : "Usuario"}
           </div>
         )}
       </SidebarFooter>

@@ -4,7 +4,7 @@ export interface User {
     id: string;
     employee_code: string;
     name: string;
-    role: string;
+    role?: string;
     is_admin: boolean;
     home_location?: string;
 }

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -60,9 +60,9 @@ def get_assigned_users(project_id: str, db: Session = Depends(get_db), current_u
 
 
 @router.post("/{project_id}/assign-user/{user_id}", status_code=204)
-def assign_user(project_id: str, user_id: str, db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
+def assign_user(project_id: str, user_id: str, role: str = Query(...), db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
     """Relaciona un usuario específico al proyecto."""
-    project_service.assign_user_to_project(db, project_id, user_id)
+    project_service.assign_user_to_project(db, project_id, user_id, role)
     return None
 
 @router.delete("/{project_id}/assign-user/{user_id}", status_code=204)

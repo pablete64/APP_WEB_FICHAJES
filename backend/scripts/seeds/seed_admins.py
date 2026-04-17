@@ -28,13 +28,11 @@ try:
             user.password_hash = get_password_hash(a["pwd"])
             user.is_admin = True
             user.name = a["name"]
-            user.role = "Admin"
         else:
             user = User(
                 employee_code=a["code"],
                 name=a["name"],
                 password_hash=get_password_hash(a["pwd"]),
-                role="Admin",
                 is_admin=True,
                 home_location="Sede Central",
             )

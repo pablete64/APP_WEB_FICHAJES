@@ -22,25 +22,17 @@ def create_user(db: Session, user_in: UserCreate, actor_id: str | None = None) -
             detail="Employee code already exists"
         )
     
-    allowed_roles = ["PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS", "PROGRAMADORES", "MONTADORES", "Management", "Admin"]
-    if user_in.role not in allowed_roles:
-         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Role must be one of: {allowed_roles}"
-        )
-
     db_user = User(
         employee_code=user_in.employee_code,
         name=user_in.name,
         home_location=user_in.home_location,
-        role=user_in.role,
         is_admin=user_in.is_admin,
         password_hash=get_password_hash(user_in.password)
     )
     db.add(db_user)
     db.flush() # ID generation
     
-    log_event(db, actor_id, "User", db_user.id, "CREATE", changes={"employee_code": user_in.employee_code, "role": user_in.role})
+    log_event(db, actor_id, "User", db_user.id, "CREATE", changes={"employee_code": user_in.employee_code})
     
     db.commit()
     db.refresh(db_user)
@@ -79,17 +71,9 @@ def update_user(db: Session, user_id: str, user_in: UserUpdate, actor_id: str | 
     
     update_data = user_in.model_dump(exclude_unset=True)
     
-    if "role" in update_data:
-        allowed_roles = ["PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS", "PROGRAMADORES", "MONTADORES", "Management", "Admin"]
-        if update_data["role"] not in allowed_roles:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Role must be one of: {allowed_roles}"
-            )
-            
     if "password" in update_data:
         db_user.password_hash = get_password_hash(update_data.pop("password"))
-        
+
     if "assigned_projects" in update_data:
         projects_data = update_data.pop("assigned_projects")
         if projects_data is not None:

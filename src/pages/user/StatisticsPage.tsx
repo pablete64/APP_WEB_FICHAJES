@@ -372,7 +372,6 @@ export default function StatisticsPage() {
             <div>
               <div style={{ fontSize: 16, fontWeight: 800 }}>{user?.name || "—"}</div>
               <div style={{ fontSize: 12, color: C.dim }}>Cód: {user?.employee_code || "—"}</div>
-              {user?.role && <div style={{ fontSize: 11, color: C.dim, marginTop: 1 }}>{user.role}</div>}
             </div>
           </div>
 

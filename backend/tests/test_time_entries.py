@@ -10,7 +10,7 @@ def get_task_by_code(tasks, code):
 
 def test_create_standard_entry_assigned_ok(user_client, admin_client, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "standard")
-    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")
     task = get_task_by_code(seed_tasks, "313")
     
     payload = {
@@ -55,7 +55,7 @@ def test_create_non_productive_not_assigned_ok(user_client, seed_projects, seed_
 
 def test_create_entry_future_date_fails(user_client, admin_client, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "standard")
-    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")
     task = get_task_by_code(seed_tasks, "313")
     
     future_date = (date.today() + timedelta(days=1)).isoformat()
@@ -71,7 +71,7 @@ def test_create_entry_future_date_fails(user_client, admin_client, seed_projects
 
 def test_create_entry_invalid_hours(user_client, admin_client, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "standard")
-    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")
     task = get_task_by_code(seed_tasks, "313")
     
     # Hours > 24
@@ -86,7 +86,7 @@ def test_create_entry_invalid_hours(user_client, admin_client, seed_projects, se
 
 def test_task_4xx_requires_fields(user_client, admin_client, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "standard")
-    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")
     task = get_task_by_code(seed_tasks, "400") # Viaje
     
     payload = {
@@ -108,8 +108,8 @@ def test_task_4xx_requires_fields(user_client, admin_client, seed_projects, seed
 
 def test_offer_project_task_rules(user_client, admin_client, admin_user, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "offer")
-    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
-    admin_client.post(f"/projects/{project.id}/assign-user/{admin_user.id}")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")
+    admin_client.post(f"/projects/{project.id}/assign-user/{admin_user.id}?role=Management")
     
     task_std = get_task_by_code(seed_tasks, "313")
     task_115 = get_task_by_code(seed_tasks, "115")
@@ -143,7 +143,7 @@ def test_create_entry_invalid_project(user_client, seed_tasks):
 
 def test_create_entry_invalid_task(user_client, admin_client, seed_projects, normal_user):
     project = seed_projects[0]
-    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")
     
     payload = {
         "project_id": project.id,
@@ -156,7 +156,7 @@ def test_create_entry_invalid_task(user_client, admin_client, seed_projects, nor
 
 def test_extra_fields_ignored_on_standard_task(user_client, admin_client, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "standard")
-    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")
     task = get_task_by_code(seed_tasks, "313")
     
     payload = {
@@ -184,7 +184,7 @@ def test_extra_fields_ignored_on_standard_task(user_client, admin_client, seed_p
 
 def test_time_entries_rbac_admin_vs_user(user_client, admin_client, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "standard")
-    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")
     task = get_task_by_code(seed_tasks, "313")
     
     payload = {"project_id": project.id, "task_id": task.id, "date": date.today().isoformat(), "hours": 4.0}
@@ -207,7 +207,7 @@ def test_time_entries_rbac_admin_vs_user(user_client, admin_client, seed_project
 
 def test_upload_ticket_photo_accepts_iphone_heif(user_client, admin_client, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "standard")
-    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")
     task = get_task_by_code(seed_tasks, "400")
 
     payload = {
@@ -233,7 +233,7 @@ def test_upload_ticket_photo_accepts_iphone_heif(user_client, admin_client, seed
 
 def test_upload_ticket_photo_accepts_valid_extension_with_generic_mime(user_client, admin_client, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "standard")
-    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")
     task = get_task_by_code(seed_tasks, "400")
 
     payload = {
@@ -259,7 +259,7 @@ def test_upload_ticket_photo_accepts_valid_extension_with_generic_mime(user_clie
 
 def test_upload_ticket_photo_supports_multiple_attachments(user_client, admin_client, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "standard")
-    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")
     task = get_task_by_code(seed_tasks, "400")
 
     payload = {
@@ -291,7 +291,7 @@ def test_upload_ticket_photo_supports_multiple_attachments(user_client, admin_cl
 
 def test_delete_ticket_attachment_removes_only_selected_file(user_client, admin_client, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "standard")
-    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")
     task = get_task_by_code(seed_tasks, "400")
 
     payload = {

@@ -12,7 +12,6 @@ export interface UserResponse {
     employee_code: string;
     name: string;
     home_location?: string;
-    role: string;
     is_admin: boolean;
     active: boolean;
     created_at: string;

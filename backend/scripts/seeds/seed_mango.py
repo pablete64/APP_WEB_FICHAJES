@@ -11,6 +11,7 @@ from app.models import Base
 from app.models.task import Task
 from app.models.user import User
 from app.models.project import Project
+from app.models.project_user import ProjectUser
 from app.models.time_entry import TimeEntry
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -91,19 +92,17 @@ try:
             employee_code=data["user"],
             name=data["name"],
             home_location=get_random_home_location(),
-            role=data["role"],
             password_hash=get_password_hash("1234") # Default password
         )
         db.add(new_u)
-        new_users.append(new_u)
+        new_users.append((new_u, data["role"]))
         
     db.flush()
     
     print("Assigning all users to project MANGO...")
-    from app.models.project_user import ProjectUser
-    for user in new_users:
+    for user, project_role in new_users:
         if user not in mango_project.users:
-            assoc = ProjectUser(project_id=mango_project.id, user_id=user.id, role=user.role)
+            assoc = ProjectUser(project_id=mango_project.id, user_id=user.id, role=project_role)
             db.add(assoc)
             
     db.commit()
@@ -129,8 +128,8 @@ try:
         
     while current_hours < total_hours_target or current_overtime < total_overtime_target:
         # Pick a random user
-        user = random.choice(new_users)
-        r_tasks = tasks_by_role[user.role]
+        user, project_role = random.choice(new_users)
+        r_tasks = tasks_by_role[project_role]
         
         if not r_tasks:
             continue # safety fallback

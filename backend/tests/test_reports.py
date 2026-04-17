@@ -2,7 +2,7 @@ def test_reports_projects_aggregation(admin_client, user_client, seed_projects, 
     # Simulamos algunas entradas
     project_id = seed_projects[0].id # P-STD
     task_id = seed_tasks[3].id
-    admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}?role=Montadores")
     
     admin_client.post("/time-entries/", json={
         "project_id": project_id,
@@ -36,7 +36,7 @@ def test_export_csv_report(admin_client, user_client, seed_projects, seed_tasks,
     # Setup some data
     project_id = seed_projects[0].id
     task_id = seed_tasks[3].id
-    admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}?role=Montadores")
     
     admin_client.post("/time-entries/", json={
         "project_id": project_id, "task_id": task_id, "date": "2025-06-15", "hours": 4.0, "user_id": normal_user.id
@@ -59,7 +59,7 @@ def test_reports_rbac_user_forbidden(user_client):
 def test_reports_date_filtering(admin_client, user_client, seed_projects, seed_tasks, normal_user):
     project_id = seed_projects[0].id
     task_id = seed_tasks[3].id
-    admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}?role=Montadores")
     
     # Entry 1 (Out of bounds)
     admin_client.post("/time-entries/", json={"project_id": project_id, "task_id": task_id, "date": "2025-01-01", "hours": 2.0, "user_id": normal_user.id})
@@ -79,7 +79,7 @@ def test_reports_date_filtering(admin_client, user_client, seed_projects, seed_t
 def test_reports_other_aggregations_exist(admin_client, user_client, seed_projects, seed_tasks, normal_user):
     project_id = seed_projects[0].id
     task_id = seed_tasks[3].id
-    admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}?role=Montadores")
     
     admin_client.post("/time-entries/", json={"project_id": project_id, "task_id": task_id, "date": "2025-03-01", "hours": 6.0, "user_id": normal_user.id})
     
@@ -101,7 +101,7 @@ def test_reports_other_aggregations_exist(admin_client, user_client, seed_projec
 def test_reports_analytics_summary(admin_client, user_client, seed_projects, seed_tasks, normal_user):
     project_id = seed_projects[0].id
     task_id = seed_tasks[3].id
-    admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}?role=Montadores")
     
     admin_client.post("/time-entries/", json={
         "project_id": project_id, "task_id": task_id, "date": "2025-07-01", "hours": 4.0, "user_id": normal_user.id

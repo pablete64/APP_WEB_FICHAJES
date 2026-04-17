@@ -12,7 +12,6 @@ class UserBase(BaseModel):
     employee_code: str
     name: str
     home_location: Optional[str] = None
-    role: str
 
 class UserCreate(UserBase):
     password: str
@@ -25,7 +24,6 @@ class UserUpdateProjectRole(BaseModel):
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     home_location: Optional[str] = None
-    role: Optional[str] = None
     password: Optional[str] = None
     is_admin: Optional[bool] = None
     assigned_projects: Optional[List[UserUpdateProjectRole]] = None

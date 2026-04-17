@@ -13,6 +13,7 @@ from app.models import Base
 from app.models.user import User
 from app.models.task import Task
 from app.models.project import Project
+from app.models.project_user import ProjectUser
 from app.auth.security import get_password_hash
 from datetime import date
 
@@ -101,7 +102,6 @@ def admin_user(db_session):
     user = User(
         employee_code="admin99",
         name="Admin Test",
-        role="Management",
         password_hash=get_password_hash("admin123"),
         is_admin=True
     )
@@ -115,7 +115,6 @@ def normal_user(db_session):
     user = User(
         employee_code="user01",
         name="User Test",
-        role="Montadores",
         password_hash=get_password_hash("user123"),
         is_admin=False
     )
@@ -165,3 +164,16 @@ def seed_projects(db_session):
         db_session.refresh(p)
     return projects
 
+@pytest.fixture(scope="function")
+def assign_project_role(db_session):
+    def _assign(project_id: str, user_id: str, role: str):
+        assoc = db_session.query(ProjectUser).filter(
+            ProjectUser.project_id == project_id,
+            ProjectUser.user_id == user_id,
+        ).first()
+        if assoc:
+            assoc.role = role
+        else:
+            db_session.add(ProjectUser(project_id=project_id, user_id=user_id, role=role))
+        db_session.commit()
+    return _assign

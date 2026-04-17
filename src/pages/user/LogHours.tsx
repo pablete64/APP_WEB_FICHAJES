@@ -127,9 +127,9 @@ export default function LogHours() {
   const selectedProject = allProjects.find(p => p.id === projectId);
 
   const roleInProject = useMemo(() => {
-    if (!selectedProject || !user) return user?.role || "";
+    if (!selectedProject || !user) return "";
     const assignment = selectedProject.assigned_users?.find((su: any) => su.user_id === user.id);
-    return assignment ? assignment.role : (user.role || "");
+    return assignment ? assignment.role : "";
   }, [selectedProject, user]);
 
   // Travel time from project config (minutes → hours, read-only for user)
@@ -272,7 +272,7 @@ export default function LogHours() {
                 <SelectTrigger><SelectValue placeholder="Elige un proyecto" /></SelectTrigger>
                 <SelectContent>
                   {allProjects.map(p => {
-                    const r = (p as any).assigned_users?.find((su: any) => su.user_id === user?.id)?.role || user?.role;
+                    const r = (p as any).assigned_users?.find((su: any) => su.user_id === user?.id)?.role;
                     return (
                       <SelectItem key={p.id} value={p.id}>[{p.code}] {p.name} {r ? `(${r})` : ""}</SelectItem>
                     )

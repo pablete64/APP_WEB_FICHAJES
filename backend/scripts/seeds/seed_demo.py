@@ -10,6 +10,7 @@ from app.models import Base
 from app.models.user import User
 from app.models.task import Task
 from app.models.project import Project
+from app.models.project_user import ProjectUser
 from app.models.time_entry import TimeEntry
 from app.auth.security import get_password_hash
 from sqlalchemy.orm import Session
@@ -29,7 +30,6 @@ def seed_demo_data():
             employee_code="ADMIN",
             name="Super Admin",
             password_hash=get_password_hash("admin123"),
-            role="Management",
             is_admin=True,
             home_location="Oficina Central"
         )
@@ -37,16 +37,17 @@ def seed_demo_data():
         
     # Regular Users
     users = []
+    user_roles_by_code = {}
     user_roles = ["PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS", "PROGRAMADORES", "MONTADORES"]
     for i, role in enumerate(user_roles):
         code = f"USER00{i+1}"
+        user_roles_by_code[code] = role
         u = db.query(User).filter(User.employee_code == code).first()
         if not u:
             u = User(
                 employee_code=code,
                 name=f"Empleado Demo {i+1}",
                 password_hash=get_password_hash(f"user00{i+1}"), # ej: user001
-                role=role,
                 is_admin=False,
                 home_location=f"Local {i+1}"
             )
@@ -126,10 +127,11 @@ def seed_demo_data():
     prj1 = db.query(Project).filter(Project.code == "PRJ-001").first()
     if not prj1:
         prj1 = Project(code="PRJ-001", name="Planta Envasado Madrid", location="Madrid Sur", distance_from_workshop=15.0, start_date=date(2025,1,1), type="standard")
-        # Asignar a todos
-        for u in users:
-            prj1.users.append(u)
         db.add(prj1)
+        db.flush()
+
+        for u in users:
+            db.add(ProjectUser(project_id=prj1.id, user_id=u.id, role=user_roles_by_code[u.employee_code]))
 
     prj2 = db.query(Project).filter(Project.code == "OFR-002").first()
     if not prj2:
@@ -150,6 +152,7 @@ def seed_demo_data():
     has_entries = db.query(TimeEntry).first()
     if not has_entries:
         for user in users:
+            project_role = user_roles_by_code.get(user.employee_code, "")
             for day_offset in range(10):  # Últimos 10 días
                 current_date = today - timedelta(days=day_offset)
                 
@@ -164,13 +167,13 @@ def seed_demo_data():
                 choice = random.random()
                 if choice < 0.7:
                     project = prj1
-                    valid_tasks = [t for t in tasks if user.role in t.allowed_roles]
+                    valid_tasks = [t for t in tasks if project_role in t.allowed_roles]
                 elif choice < 0.9:
                     project = prj3 # no productivo
                     valid_tasks = tasks # no roles req here typically, but let's just pick any task
                 else:
                     project = prj2 # oferta
-                    valid_tasks = [t for t in tasks if t.code == "115" and user.role in t.allowed_roles]
+                    valid_tasks = [t for t in tasks if t.code == "115" and project_role in t.allowed_roles]
                 
                 if not valid_tasks:
                    continue

@@ -5,10 +5,10 @@ from app.schemas.user import UserCreate
 from datetime import date
 from app.models.audit_log import AuditLog
 
-def test_audit_log_time_entry_lifecycle(db_session, admin_user, seed_projects, seed_tasks):
+def test_audit_log_time_entry_lifecycle(db_session, admin_user, seed_projects, seed_tasks, assign_project_role):
     project = seed_projects[0]
     task = seed_tasks[3]
-    project_service.assign_user_to_project(db_session, project.id, admin_user.id)
+    assign_project_role(project.id, admin_user.id, "Management")
 
     # 1. CREATE
     entry_in = TimeEntryCreate(
@@ -52,7 +52,7 @@ def test_audit_log_time_entry_lifecycle(db_session, admin_user, seed_projects, s
     assert audit_logs[0].action == "SOFT_DELETE"
 
 def test_audit_log_user_creation_deletion(db_session, admin_user):
-    user_in = UserCreate(employee_code="audit_usr_1", name="Audi Test", role="Programadores", is_admin=False, password="password")
+    user_in = UserCreate(employee_code="audit_usr_1", name="Audi Test", is_admin=False, password="password")
     user = user_service.create_user(db_session, user_in, actor_id=admin_user.id)
 
     logs = db_session.query(AuditLog).filter(AuditLog.entity_id == user.id).all()

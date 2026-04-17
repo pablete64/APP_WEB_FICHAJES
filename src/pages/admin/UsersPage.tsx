@@ -57,7 +57,6 @@ export default function UsersPage() {
   const [employeeCode, setEmployeeCode] = useState("");
   const [name, setName] = useState("");
   const [homeLocation, setHomeLocation] = useState("");
-  const [role, setRole] = useState<string>("");
   const [password, setPassword] = useState("");
   const [assignedProjects, setAssignedProjects] = useState<any[]>([]);
   const [newProjectId, setNewProjectId] = useState("");
@@ -84,11 +83,10 @@ export default function UsersPage() {
     setEmployeeCode(user.employee_code);
     setName(user.name);
     setHomeLocation(user.home_location || "");
-    setRole(user.role);
     setPassword(""); // Clear password field for security
     setAssignedProjects([...(user.assigned_projects || [])]);
     setNewProjectId("");
-    setNewProjectRole(user.role);
+    setNewProjectRole("");
     setOpen(true);
   };
 
@@ -117,7 +115,6 @@ export default function UsersPage() {
         employee_code: employeeCode,
         name,
         home_location: homeLocation,
-        role: "PROYECTISTAS MECANICOS", // default role, reassigned via project assignment
         password,
       });
     }
@@ -140,8 +137,13 @@ export default function UsersPage() {
           <DialogHeader><DialogTitle>{editingUserId ? "Editar Usuario" : "Crear Usuario"}</DialogTitle></DialogHeader>
           <div className="space-y-3 pt-4">
             <div>
-              <Label>Código Empleado</Label>
-              <Input value={employeeCode} onChange={e => setEmployeeCode(e.target.value)} disabled={!!editingUserId} />
+              <Label>Código Empleado / Usuario</Label>
+              <Input
+                value={employeeCode}
+                onChange={e => setEmployeeCode(e.target.value)}
+                disabled={!!editingUserId}
+                placeholder="Ej: mariogar"
+              />
             </div>
             <div><Label>Nombre</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
             <div>

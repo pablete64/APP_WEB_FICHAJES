@@ -17,6 +17,7 @@ from app.models import Base
 from app.models.user import User
 from app.models.task import Task
 from app.models.project import Project
+from app.models.project_user import ProjectUser
 from app.models.time_entry import TimeEntry
 from sqlalchemy.orm import Session
 
@@ -86,10 +87,20 @@ def seed():
     else:
         print(f"  Proyecto ya existe: [{PROJECT_CODE}] {PROJECT_NAME}")
 
+    user_roles = {}
+    for u in users:
+        existing_assoc = next((assoc for assoc in u.project_associations if assoc.role), None)
+        if existing_assoc:
+            user_roles[u.id] = existing_assoc.role
+
     # Asignar todos los usuarios al proyecto
     for u in users:
+        project_role = user_roles.get(u.id)
+        if not project_role:
+            print(f"  AVISO: usuario '{u.employee_code}' sin rol por proyecto, saltando asignacion.")
+            continue
         if u not in prj.users:
-            prj.users.append(u)
+            db.add(ProjectUser(project_id=prj.id, user_id=u.id, role=project_role))
 
     db.commit()
 
@@ -98,9 +109,13 @@ def seed():
     created = 0
 
     for u in users:
-        role_tasks_codes = TASK_MAP.get(u.role, [])
+        project_role = user_roles.get(u.id)
+        if not project_role:
+            continue
+
+        role_tasks_codes = TASK_MAP.get(project_role, [])
         if not role_tasks_codes:
-            print(f"  AVISO: rol '{u.role}' no tiene tareas mapeadas, saltando.")
+            print(f"  AVISO: rol '{project_role}' no tiene tareas mapeadas, saltando.")
             continue
 
         # Calcular qué días trabaja este usuario en PRJ-002

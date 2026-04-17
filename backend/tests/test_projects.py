@@ -27,13 +27,13 @@ def test_create_project_duplicate(admin_client, seed_projects):
 
 def test_assign_user_ok(admin_client, seed_projects, normal_user):
     project_id = seed_projects[0].id
-    response = admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}")
+    response = admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}?role=Montadores")
     assert response.status_code == 204
 
 def test_get_my_projects(user_client, admin_client, seed_projects, normal_user):
     # Asignamos al usuario al primer proyecto
     project_id = seed_projects[0].id
-    admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}")
+    admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}?role=Montadores")
 
     # Chequeamos
     response = user_client.get("/projects/me")
