@@ -77,14 +77,14 @@ export const reportService = {
         return fetchApi<DailyReport[]>(`/reports/daily${buildQueryString(filters)}`);
     },
 
-    exportXLSX: async (filters?: FilterParams): Promise<void> => {
+    exportXLSX: async (filters?: FilterParams, filename?: string): Promise<void> => {
         const blob = await fetchApi<Blob>(`/reports/export${buildQueryString(filters)}`);
 
         // Download Blob functionality
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `timeflow_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+        a.download = filename || `export_${new Date().toISOString().split('T')[0]}.xlsx`;
         document.body.appendChild(a);
         a.click();
 

@@ -25,6 +25,15 @@ const ALL_MONTHS = [
   { value: "12", label: "12 - Diciembre" },
 ];
 
+const sanitizeFilenamePart = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9_-]+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .toLowerCase();
+
 export default function ExportPage() {
   const currentYear = new Date().getFullYear().toString();
 
@@ -102,7 +111,25 @@ export default function ExportPage() {
   const handleExport = async () => {
     try {
       setIsExporting(true);
-      await reportService.exportXLSX(filters);
+      const selectedProject = projects.find((p) => p.id === selectedProjectId);
+      const projectPart = selectedProject
+        ? sanitizeFilenamePart(`${selectedProject.code}_${selectedProject.name}`)
+        : "export";
+
+      let periodPart = "historico";
+      if (startDate && endDate) {
+        periodPart = startDate === endDate ? startDate : `${startDate}_a_${endDate}`;
+      } else if (startDate) {
+        periodPart = startDate;
+      } else if (endDate) {
+        periodPart = endDate;
+      } else if (selectedYear !== "all" && selectedMonth !== "all") {
+        periodPart = `${selectedYear}-${selectedMonth}`;
+      } else if (selectedYear !== "all") {
+        periodPart = selectedYear;
+      }
+
+      await reportService.exportXLSX(filters, `${projectPart}_${periodPart}.xlsx`);
       toast.success("¡Exportación descargada con éxito!");
     } catch (error) {
       toast.error("Error al exportar los datos");
