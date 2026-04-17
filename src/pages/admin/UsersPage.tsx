@@ -136,7 +136,7 @@ export default function UsersPage() {
       </div>
 
       <Dialog open={open} onOpenChange={(v) => { setOpen(v); if(!v) resetForm(); }}>
-        <DialogContent className="w-[95vw] max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editingUserId ? "Editar Usuario" : "Crear Usuario"}</DialogTitle></DialogHeader>
           <div className="space-y-3 pt-4">
             <div>
@@ -155,8 +155,8 @@ export default function UsersPage() {
                  <Label className="text-sm font-semibold block text-primary">Proyectos y Roles Asignados</Label>
                  
                  {/* Añadir nuevo proyecto */}
-                 <div className="flex gap-2 items-end bg-muted/30 p-3 rounded-lg border border-dashed">
-                    <div className="flex-1">
+                 <div className="grid grid-cols-1 gap-3 bg-muted/30 p-3 rounded-lg border border-dashed sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+                    <div className="min-w-0">
                       <Label className="text-xs">Proyecto</Label>
                       <Select value={newProjectId} onValueChange={setNewProjectId}>
                         <SelectTrigger className="h-8"><SelectValue placeholder="Seleccionar..." /></SelectTrigger>
@@ -167,7 +167,7 @@ export default function UsersPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="flex-1">
+                    <div className="min-w-0">
                       <Label className="text-xs">Rol en Proyecto</Label>
                       <Select value={newProjectRole} onValueChange={setNewProjectRole}>
                         <SelectTrigger className="h-8"><SelectValue placeholder="Rol..." /></SelectTrigger>
@@ -179,7 +179,7 @@ export default function UsersPage() {
                     <Button 
                       size="sm" 
                       variant="secondary"
-                      className="h-8"
+                      className="h-8 w-full sm:w-auto"
                       disabled={!newProjectId || !newProjectRole}
                       onClick={(e) => {
                         e.preventDefault();
@@ -202,12 +202,13 @@ export default function UsersPage() {
                  {assignedProjects.length === 0 ? (
                    <p className="text-sm text-muted-foreground p-2">El usuario no está asignado a ningún proyecto.</p>
                  ) : (
-                   <div className="space-y-2 max-h-40 overflow-y-auto">
+                   <div className="space-y-2 max-h-56 overflow-y-auto">
                      {assignedProjects.map((p: any, idx) => (
-                       <div key={p.project_id} className="flex gap-2 items-center text-sm bg-card border shadow-sm p-2 rounded-lg">
-                          <span className="font-medium truncate flex-1 leading-tight text-xs ml-1">
+                       <div key={p.project_id} className="flex flex-col gap-2 text-sm bg-card border shadow-sm p-3 rounded-lg sm:flex-row sm:items-center">
+                          <span className="font-medium leading-tight text-xs min-w-0 flex-1">
                             [{p.project_code}] {p.project_name}
                           </span>
+                          <div className="flex items-center gap-2 sm:shrink-0">
                           <Select 
                             value={p.role} 
                             onValueChange={(newRole) => {
@@ -216,7 +217,7 @@ export default function UsersPage() {
                                setAssignedProjects(updated);
                             }}
                           >
-                            <SelectTrigger className="w-[140px] h-7 text-xs"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="h-8 w-full text-xs sm:w-[180px]"><SelectValue /></SelectTrigger>
                             <SelectContent>
                               {USER_ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
                             </SelectContent>
@@ -224,13 +225,14 @@ export default function UsersPage() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-destructive"
+                            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
                             onClick={() => {
                               setAssignedProjects(assignedProjects.filter(ap => ap.project_id !== p.project_id));
                             }}
                           >
                              <Trash2 className="h-4 w-4" />
                           </Button>
+                          </div>
                        </div>
                      ))}
                    </div>
