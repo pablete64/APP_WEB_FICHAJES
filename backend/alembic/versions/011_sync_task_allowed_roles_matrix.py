@@ -1,6 +1,6 @@
 """Sync task allowed roles matrix
 
-Revision ID: 011_sync_task_allowed_roles_matrix
+Revision ID: 011_task_roles_sync
 Revises: 010_add_project_client
 Create Date: 2026-04-20
 
@@ -10,7 +10,7 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision = "011_sync_task_allowed_roles_matrix"
+revision = "011_task_roles_sync"
 down_revision = "010_add_project_client"
 branch_labels = None
 depends_on = None
