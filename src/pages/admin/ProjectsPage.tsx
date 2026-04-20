@@ -64,6 +64,8 @@ export default function ProjectsPage() {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [client, setClient] = useState("");
+  const [clientFilter, setClientFilter] = useState("all");
+  const [searchFilter, setSearchFilter] = useState("");
   const [location, setLocation] = useState("");
   const [distance, setDistance] = useState("0");
   const [travelTime, setTravelTime] = useState("0");
@@ -83,6 +85,26 @@ export default function ProjectsPage() {
   };
 
   const nonAdminUsers = users.filter((u: any) => !u.is_admin);
+  const availableClients = Array.from(
+    new Set(
+      projects
+        .map((p: any) => (p.client || "").trim())
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b, "es"));
+
+  const filteredProjects = projects.filter((p: any) => {
+    const normalizedSearch = searchFilter.trim().toLowerCase();
+    const matchesClient = clientFilter === "all" || (p.client || "").trim() === clientFilter;
+    const matchesSearch =
+      !normalizedSearch ||
+      p.name.toLowerCase().includes(normalizedSearch) ||
+      p.code.toLowerCase().includes(normalizedSearch) ||
+      (p.client || "").toLowerCase().includes(normalizedSearch) ||
+      (p.location || "").toLowerCase().includes(normalizedSearch);
+
+    return matchesClient && matchesSearch;
+  });
   
   const ROLES = [
     "PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS",
@@ -219,9 +241,37 @@ export default function ProjectsPage() {
         </Dialog>
       </div>
 
+      <div className="flex flex-col md:flex-row gap-3 mb-4">
+        <div className="w-full md:max-w-sm">
+          <Label htmlFor="project-search">Buscar proyecto</Label>
+          <Input
+            id="project-search"
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            placeholder="Código, nombre, cliente o ubicación"
+          />
+        </div>
+        <div className="w-full md:max-w-xs">
+          <Label>Filtrar por cliente</Label>
+          <Select value={clientFilter} onValueChange={setClientFilter}>
+            <SelectTrigger>
+              <SelectValue placeholder="Todos los clientes" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los clientes</SelectItem>
+              {availableClients.map((clientName) => (
+                <SelectItem key={clientName} value={clientName}>
+                  {clientName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
       {/* ── Mobile card list (< md) ── */}
       <div className="md:hidden space-y-3">
-        {projects.map(p => (
+        {filteredProjects.map(p => (
           <div key={p.id} className="rounded-lg border bg-card p-4 space-y-2">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
@@ -271,7 +321,7 @@ export default function ProjectsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {projects.map(p => (
+              {filteredProjects.map(p => (
                 <TableRow key={p.id}>
                   <TableCell><Badge variant="secondary">{p.code}</Badge></TableCell>
                   <TableCell className="font-medium">{p.name}</TableCell>

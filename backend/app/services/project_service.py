@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 from typing import List
 from app.models.time_entry import TimeEntry
@@ -14,6 +15,9 @@ def get_project_by_id(db: Session, project_id: str) -> Project | None:
 
 def get_project_by_code(db: Session, code: str) -> Project | None:
     return db.query(Project).filter(Project.code == code, Project.deleted_at == None).first()
+
+def get_project_by_code_including_deleted(db: Session, code: str) -> Project | None:
+    return db.query(Project).filter(Project.code == code).first()
 
 def create_project(db: Session, project_in: ProjectCreate) -> Project:
     if get_project_by_code(db, code=project_in.code):
@@ -55,7 +59,14 @@ def create_project(db: Session, project_in: ProjectCreate) -> Project:
     )
 
     db.add(db_project)
-    db.flush()
+    try:
+        db.flush()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Project code already exists"
+        )
 
     for mapping in project_in.assigned_users:
         assoc = ProjectUser(project_id=db_project.id, user_id=mapping.user_id, role=mapping.role)

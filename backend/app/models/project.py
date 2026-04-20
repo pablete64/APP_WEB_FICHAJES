@@ -9,7 +9,7 @@ class Project(Base):
 
     id = Column(String(36), primary_key=True, default=generate_uuid)
     name = Column(String(255), nullable=False)
-    code = Column(String(50), unique=True, nullable=False, index=True)
+    code = Column(String(50), nullable=False, index=True)
     client = Column(String(255), nullable=True)
     location = Column(String(255), nullable=True)
     distance_from_workshop = Column(Numeric(8, 2), default=0.0)
