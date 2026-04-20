@@ -11,6 +11,7 @@ class User(Base):
     employee_code = Column(String(20), unique=True, nullable=False, index=True)
     name = Column(String(255), nullable=False)
     home_location = Column(String(255), nullable=True)
+    role = Column(String(50), nullable=False, default="")
     password_hash = Column(String(255), nullable=False)
     is_admin = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

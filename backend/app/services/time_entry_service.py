@@ -78,13 +78,13 @@ def _validate_time_entry_business_rules(db: Session, entry_in: TimeEntryCreate, 
     if not user:
          raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
-    # Obtenemos el rol efectivo (el del proyecto si existe, sino el global)
+    # Obtenemos el rol efectivo (el del proyecto si existe, si no el rol base del usuario)
     project_user = db.query(ProjectUser).filter(
         ProjectUser.project_id == entry_in.project_id,
         ProjectUser.user_id == target_user_id
     ).first()
     
-    effective_role = project_user.role if project_user else ""
+    effective_role = project_user.role if project_user else (user.role or "")
 
     if task.allowed_roles and not effective_role:
          raise HTTPException(

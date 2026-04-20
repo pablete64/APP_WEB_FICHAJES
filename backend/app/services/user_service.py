@@ -26,6 +26,7 @@ def create_user(db: Session, user_in: UserCreate, actor_id: str | None = None) -
         employee_code=user_in.employee_code,
         name=user_in.name,
         home_location=user_in.home_location,
+        role=user_in.role,
         is_admin=user_in.is_admin,
         password_hash=get_password_hash(user_in.password)
     )

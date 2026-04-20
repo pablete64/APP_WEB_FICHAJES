@@ -58,6 +58,7 @@ export default function UsersPage() {
   const [name, setName] = useState("");
   const [homeLocation, setHomeLocation] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("");
   const [assignedProjects, setAssignedProjects] = useState<any[]>([]);
   const [newProjectId, setNewProjectId] = useState("");
   const [newProjectRole, setNewProjectRole] = useState("");
@@ -68,6 +69,7 @@ export default function UsersPage() {
     setName("");
     setHomeLocation("");
     setPassword("");
+    setRole("");
     setAssignedProjects([]);
     setNewProjectId("");
     setNewProjectRole("");
@@ -83,15 +85,16 @@ export default function UsersPage() {
     setEmployeeCode(user.employee_code);
     setName(user.name);
     setHomeLocation(user.home_location || "");
+    setRole(user.role || "");
     setPassword(""); // Clear password field for security
     setAssignedProjects([...(user.assigned_projects || [])]);
     setNewProjectId("");
-    setNewProjectRole("");
+    setNewProjectRole(user.role || "");
     setOpen(true);
   };
 
   const handleSubmit = () => {
-    if (!name) return;
+    if (!name || !role) return;
     
     if (editingUserId) {
       let finalProjects = [...assignedProjects];
@@ -106,7 +109,7 @@ export default function UsersPage() {
            });
         }
       }
-      const data: any = { name, home_location: homeLocation, assigned_projects: finalProjects };
+      const data: any = { name, home_location: homeLocation, role, assigned_projects: finalProjects };
       if (password) data.password = password;
       updateMutation.mutate({ id: editingUserId, data });
     } else {
@@ -115,6 +118,7 @@ export default function UsersPage() {
         employee_code: employeeCode,
         name,
         home_location: homeLocation,
+        role,
         password,
       });
     }
@@ -146,6 +150,20 @@ export default function UsersPage() {
               />
             </div>
             <div><Label>Nombre</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
+            <div>
+              <Label>Rol Predeterminado</Label>
+              <Select value={role} onValueChange={(value) => {
+                setRole(value);
+                if (!newProjectRole) {
+                  setNewProjectRole(value);
+                }
+              }}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar rol" /></SelectTrigger>
+                <SelectContent>
+                  {USER_ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label>Contraseña {editingUserId && "(dejar en blanco para no cambiar)"}</Label>
               <Input type="password" value={password} onChange={e => setPassword(e.target.value)} />
@@ -194,6 +212,7 @@ export default function UsersPage() {
                           role: newProjectRole
                         }]);
                         setNewProjectId("");
+                        setNewProjectRole(role);
                       }}
                     >
                       <Plus className="h-4 w-4" />
@@ -259,6 +278,7 @@ export default function UsersPage() {
                 {u.is_admin && <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full font-semibold">Admin</span>}
               </div>
               <p className="text-xs text-muted-foreground">{u.employee_code}</p>
+              <p className="text-xs text-muted-foreground">Rol: {u.role || "Sin rol base"}</p>
             </div>
             <div className="flex gap-1">
               <Button 
@@ -299,6 +319,7 @@ export default function UsersPage() {
               <TableRow>
                 <TableHead>Código</TableHead>
                 <TableHead>Nombre</TableHead>
+                <TableHead>Rol</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -312,6 +333,7 @@ export default function UsersPage() {
                       {u.is_admin && <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full font-semibold">Admin</span>}
                     </div>
                   </TableCell>
+                  <TableCell>{u.role || "Sin rol base"}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button 

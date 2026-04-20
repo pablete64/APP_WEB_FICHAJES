@@ -140,7 +140,7 @@ export default function ProjectsPage() {
       if (prev.some(x => x.user_id === u.id)) {
         return prev.filter(x => x.user_id !== u.id);
       }
-      return [...prev, { user_id: u.id }];
+      return [...prev, { user_id: u.id, role: u.role || undefined }];
     });
   };
 

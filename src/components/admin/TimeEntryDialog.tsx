@@ -93,7 +93,7 @@ export function TimeEntryDialog({
         const selectedProject = projects.find(p => p.id === formData.project_id);
         const userProjectAssignment = selectedProject?.assigned_users?.find((su: any) => su.user_id === formData.user_id);
         const user = users.find(u => u.id === formData.user_id);
-        const role = userProjectAssignment?.role || "";
+        const role = userProjectAssignment?.role || user?.role || "";
         
         if (!role) return [];
         return tasks

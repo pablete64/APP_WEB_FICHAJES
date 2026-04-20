@@ -111,10 +111,11 @@ def assign_user_to_project(db: Session, project_id: str, user_id: str, role: str
     if existing:
         raise HTTPException(status_code=409, detail="User is already assigned to this project")
 
-    if not role:
+    effective_role = role or user.role
+    if not effective_role:
         raise HTTPException(status_code=400, detail="A project role is required to assign the user")
 
-    assoc = ProjectUser(project_id=project_id, user_id=user_id, role=role)
+    assoc = ProjectUser(project_id=project_id, user_id=user_id, role=effective_role)
     db.add(assoc)
     db.commit()
     return True
