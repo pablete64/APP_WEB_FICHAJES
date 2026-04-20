@@ -36,13 +36,13 @@ def seed_default_tasks(db: Session):
         # --- BLOQUE 300: TALLER NEWVAL ---
         {"code": "311", "name": "Fabricación", "category": "Taller Newval", "allowed_roles": ["MANAGEMENT"], "requires_extra_fields": False},
         {"code": "312", "name": "Metrología", "category": "Taller Newval", "allowed_roles": ["MANAGEMENT"], "requires_extra_fields": False},
-        {"code": "313", "name": "Montaje y PaP", "category": "Taller Newval", "allowed_roles": ["MANAGEMENT"], "requires_extra_fields": False},
-        {"code": "321", "name": "Armarios y cajas", "category": "Taller Newval", "allowed_roles": ["PROYECTISTAS ELECTRICOS", "MANAGEMENT"], "requires_extra_fields": False},
-        {"code": "322", "name": "Montaje e inst. Eléctrica", "category": "Taller Newval", "allowed_roles": ["PROYECTISTAS ELECTRICOS", "MANAGEMENT"], "requires_extra_fields": False},
+        {"code": "313", "name": "Montaje y PaP", "category": "Taller Newval", "allowed_roles": ["MONTADORES", "MANAGEMENT"], "requires_extra_fields": False},
+        {"code": "321", "name": "Armarios y cajas", "category": "Taller Newval", "allowed_roles": ["PROYECTISTAS ELECTRICOS", "MONTADORES", "MANAGEMENT"], "requires_extra_fields": False},
+        {"code": "322", "name": "Montaje e inst. Eléctrica", "category": "Taller Newval", "allowed_roles": ["PROYECTISTAS ELECTRICOS", "MONTADORES", "MANAGEMENT"], "requires_extra_fields": False},
 
         # --- BLOQUE 400: PLANTA CLIENTE ---
-        {"code": "411", "name": "Montaje y PeM Cliente", "category": "Planta Cliente", "allowed_roles": ["MANAGEMENT"], "requires_extra_fields": True},
-        {"code": "421", "name": "Montaje e Inst. Elec. PeM Cli", "category": "Planta Cliente", "allowed_roles": ["PROYECTISTAS ELECTRICOS", "MANAGEMENT"], "requires_extra_fields": True},
+        {"code": "411", "name": "Montaje y PeM Cliente", "category": "Planta Cliente", "allowed_roles": ["MONTADORES", "MANAGEMENT"], "requires_extra_fields": True},
+        {"code": "421", "name": "Montaje e Inst. Elec. PeM Cli", "category": "Planta Cliente", "allowed_roles": ["PROYECTISTAS ELECTRICOS", "MONTADORES", "MANAGEMENT"], "requires_extra_fields": True},
         {"code": "422", "name": "Montaje e Inst. Flu.PeM Client", "category": "Planta Cliente", "allowed_roles": ["PROYECTISTAS ELECTRICOS", "MANAGEMENT"], "requires_extra_fields": True},
         
         {"code": "431", "name": "PeM y Soft Cliente", "category": "Planta Cliente", "allowed_roles": ["PROGRAMADORES", "MANAGEMENT"], "requires_extra_fields": True},

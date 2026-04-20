@@ -11,7 +11,6 @@ from app.models.task import Task
 from app.models.time_entry_ticket import TimeEntryTicket
 from app.schemas.time_entry import TimeEntryCreate
 from app.services.audit_service import log_event
-from app.services.time_entry_access import is_task_allowed_for_role
 
 def get_entry_by_id(db: Session, entry_id: str) -> TimeEntry | None:
     return db.query(TimeEntry).filter(TimeEntry.id == entry_id, TimeEntry.deleted_at == None).first()
@@ -93,11 +92,14 @@ def _validate_time_entry_business_rules(db: Session, entry_in: TimeEntryCreate, 
              detail="User must have a role assigned in the selected project"
          )
          
-    if not is_task_allowed_for_role(effective_role, task, project):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"User role '{effective_role}' cannot register time on task '{task.code}' for the selected project"
-        )
+    normalized_role = (effective_role or "").strip().upper()
+    normalized_allowed_roles = [(role or "").strip().upper() for role in (task.allowed_roles or [])]
+
+    if task.allowed_roles and normalized_role not in normalized_allowed_roles:
+         raise HTTPException(
+             status_code=status.HTTP_403_FORBIDDEN,
+             detail=f"User role '{effective_role}' is not allowed for task '{task.code}' (Allowed: {task.allowed_roles})"
+         )
 
     # Validar lógica de Proyectos Oferta - ELIMINADO para permitir tareas según rol
 
