@@ -104,13 +104,25 @@ export function TimeEntryDialog({
             .sort((a, b) => a.code.localeCompare(b.code));
     }, [tasks, formData.project_id, formData.user_id, projects, users]);
 
+    const selectedTask = useMemo(
+        () => tasks.find((task) => task.id === formData.task_id),
+        [tasks, formData.task_id]
+    );
+
     const handleSave = async () => {
         if (!formData.user_id || !formData.project_id || !formData.task_id) {
             return;
         }
         setLoading(true);
         try {
-            await onSave(formData as TimeEntryCreate);
+            const payload: TimeEntryCreate = {
+                ...(formData as TimeEntryCreate),
+                distance_origin: selectedTask?.requires_extra_fields
+                    ? (formData.distance_origin || "NAVE")
+                    : undefined,
+            };
+
+            await onSave(payload);
             onOpenChange(false);
         } finally {
             setLoading(false);
