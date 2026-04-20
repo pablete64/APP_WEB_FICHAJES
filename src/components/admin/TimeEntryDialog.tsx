@@ -21,6 +21,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Loader2, ExternalLink, Trash2, Upload } from "lucide-react";
 import { TimeEntryResponse, TimeEntryCreate, timeEntryService } from "@/services/timeEntryService";
+import { isTaskAllowedForRole } from "@/lib/time-entry-access";
 
 interface TimeEntryDialogProps {
     open: boolean;
@@ -97,10 +98,7 @@ export function TimeEntryDialog({
         
         if (!role) return [];
         return tasks
-            .filter(t => 
-                t.allowed_roles.length === 0 || 
-                t.allowed_roles.some((r: string) => r.localeCompare(role, "es", { sensitivity: "base" }) === 0)
-            )
+            .filter(t => isTaskAllowedForRole(role, t, selectedProject))
             .sort((a, b) => a.code.localeCompare(b.code));
     }, [tasks, formData.project_id, formData.user_id, projects, users]);
 

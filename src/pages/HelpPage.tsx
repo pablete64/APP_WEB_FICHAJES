@@ -145,6 +145,12 @@ export default function HelpPage() {
           
           <div className="space-y-3">
             <div>
+              <p className="font-medium">💼 Ofertas (código 100)</p>
+              <ul className="list-disc pl-6 text-xs space-y-0.5 text-muted-foreground">
+                <li>100 – Ofertas</li>
+              </ul>
+            </div>
+            <div>
               <p className="font-medium">🔧 Ingeniería Mecánica (códigos 1XX)</p>
               <ul className="list-disc pl-6 text-xs space-y-0.5 text-muted-foreground">
                 <li>111 – Dirección técnica mecánica</li>

@@ -12,10 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { CheckCircle2, Clock, Upload, X, Receipt, Car, Info } from "lucide-react";
-
-// Case- and accent-insensitive role comparison
-const rolesMatch = (a: string, b: string) =>
-  a.localeCompare(b, "es", { sensitivity: "base" }) === 0;
+import { isTaskAllowedForRole } from "@/lib/time-entry-access";
 
 const MAX_TICKET_IMAGE_DIMENSION = 1600;
 const TARGET_TICKET_SIZE_BYTES = 1 * 1024 * 1024;
@@ -142,13 +139,10 @@ export default function LogHours() {
   const filteredTasks = useMemo(
     () => roleInProject
       ? tasks
-          .filter(t =>
-            t.allowed_roles.length === 0 ||
-            t.allowed_roles.some(r => rolesMatch(r, roleInProject))
-          )
+          .filter(t => isTaskAllowedForRole(roleInProject, t, selectedProject))
           .sort((a, b) => a.code.localeCompare(b.code))
       : [],
-    [tasks, roleInProject]
+    [tasks, roleInProject, selectedProject]
   );
 
   const selectedTaskObj = tasks.find(t => t.code === taskCode);
