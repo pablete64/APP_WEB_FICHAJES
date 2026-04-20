@@ -8,6 +8,7 @@ import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
     Settings2, Trash2, Edit2, Loader2, AlertCircle, Plus
@@ -27,6 +28,7 @@ import {
 import { TimeEntryDialog } from "@/components/admin/TimeEntryDialog";
 import { TimeEntryCreate } from "@/services/timeEntryService";
 import { TicketAttachmentsMenu } from "@/components/TicketAttachmentsMenu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const formatSpanishDate = (value: string) => {
     if (!value) return "—";
@@ -39,6 +41,13 @@ export default function TimeEntryManagement() {
     const queryClient = useQueryClient();
     const [selectedEntry, setSelectedEntry] = useState<any | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [dateFilter, setDateFilter] = useState("");
+    const [employeeFilter, setEmployeeFilter] = useState("");
+    const [projectFilter, setProjectFilter] = useState("");
+    const [taskFilter, setTaskFilter] = useState("");
+    const [clientFilter, setClientFilter] = useState("");
+    const [sortField, setSortField] = useState("created_at");
+    const [sortDirection, setSortDirection] = useState("desc");
 
     // Data fetching
     const { data: entries = [], isLoading: loadingEntries } = useQuery({
@@ -53,6 +62,48 @@ export default function TimeEntryManagement() {
     const users = usersData as any[];
     const projects = projectsData as any[];
     const tasks = tasksData as any[];
+
+    const visibleEntries = useMemo(() => {
+        const enriched = entries.map((entry: any) => {
+            const user = users.find((item) => item.id === entry.user_id);
+            const project = projects.find((item) => item.id === entry.project_id);
+            const task = tasks.find((item) => item.id === entry.task_id);
+            return { ...entry, _user: user, _project: project, _task: task };
+        });
+
+        const filtered = enriched.filter((entry: any) => {
+            if (dateFilter && entry.date !== dateFilter) return false;
+            if (employeeFilter && !(entry._user?.name || "").toLowerCase().includes(employeeFilter.toLowerCase())) return false;
+            if (projectFilter && !(`[${entry._project?.code || ""}] ${entry._project?.name || ""}`.toLowerCase().includes(projectFilter.toLowerCase()))) return false;
+            if (taskFilter && !(`${entry._task?.code || ""} ${entry._task?.name || ""}`.toLowerCase().includes(taskFilter.toLowerCase()))) return false;
+            if (clientFilter && !(entry._project?.client || "").toLowerCase().includes(clientFilter.toLowerCase())) return false;
+            return true;
+        });
+
+        filtered.sort((a: any, b: any) => {
+            const direction = sortDirection === "asc" ? 1 : -1;
+            const getValue = (entry: any) => {
+                switch (sortField) {
+                    case "date":
+                        return entry.date || "";
+                    case "employee":
+                        return entry._user?.name || "";
+                    case "project":
+                        return `${entry._project?.code || ""} ${entry._project?.name || ""}`;
+                    case "task":
+                        return `${entry._task?.code || ""} ${entry._task?.name || ""}`;
+                    case "client":
+                        return entry._project?.client || "";
+                    case "created_at":
+                    default:
+                        return entry.created_at || "";
+                }
+            };
+            return String(getValue(a)).localeCompare(String(getValue(b)), "es", { sensitivity: "base" }) * direction;
+        });
+
+        return filtered;
+    }, [entries, users, projects, tasks, dateFilter, employeeFilter, projectFilter, taskFilter, clientFilter, sortField, sortDirection]);
 
     const deleteMutation = useMutation({
         mutationFn: (id: string) => timeEntryService.deleteEntry(id),
@@ -84,9 +135,9 @@ export default function TimeEntryManagement() {
 
     const handleSave = async (entryData: TimeEntryCreate) => {
         if (selectedEntry) {
-            await updateMutation.mutateAsync({ id: selectedEntry.id, entry: entryData });
+            return await updateMutation.mutateAsync({ id: selectedEntry.id, entry: entryData });
         } else {
-            await createMutation.mutateAsync(entryData);
+            return await createMutation.mutateAsync(entryData);
         }
     };
 
@@ -126,18 +177,54 @@ export default function TimeEntryManagement() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-4">
+                    <Input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} />
+                    <Input value={employeeFilter} onChange={(e) => setEmployeeFilter(e.target.value)} placeholder="Filtrar por empleado" />
+                    <Input value={projectFilter} onChange={(e) => setProjectFilter(e.target.value)} placeholder="Filtrar por proyecto" />
+                    <Input value={taskFilter} onChange={(e) => setTaskFilter(e.target.value)} placeholder="Filtrar por tarea" />
+                    <Input value={clientFilter} onChange={(e) => setClientFilter(e.target.value)} placeholder="Filtrar por cliente" />
+                    <Select value={sortField} onValueChange={setSortField}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="created_at">Orden llegada</SelectItem>
+                            <SelectItem value="date">Fecha</SelectItem>
+                            <SelectItem value="employee">Empleado</SelectItem>
+                            <SelectItem value="project">Proyecto</SelectItem>
+                            <SelectItem value="task">Tarea</SelectItem>
+                            <SelectItem value="client">Cliente</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Select value={sortDirection} onValueChange={setSortDirection}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="desc">Descendente</SelectItem>
+                            <SelectItem value="asc">Ascendente</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <Button variant="outline" onClick={() => {
+                        setDateFilter("");
+                        setEmployeeFilter("");
+                        setProjectFilter("");
+                        setTaskFilter("");
+                        setClientFilter("");
+                        setSortField("created_at");
+                        setSortDirection("desc");
+                    }}>
+                        Limpiar filtros
+                    </Button>
+                </div>
                 {/* ── Mobile card list (< md) ── */}
                 <div className="md:hidden space-y-3">
                     {loadingEntries ? (
                         <div className="py-10 flex justify-center">
                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                         </div>
-                    ) : entries.length === 0 ? (
+                    ) : visibleEntries.length === 0 ? (
                         <p className="text-center text-muted-foreground py-10">No hay registros para mostrar.</p>
-                    ) : entries.map(e => {
-                        const user = users.find(u => u.id === e.user_id);
-                        const project = projects.find(p => p.id === e.project_id);
-                        const task = tasks.find(t => t.id === e.task_id);
+                    ) : visibleEntries.map(e => {
+                        const user = e._user;
+                        const project = e._project;
+                        const task = e._task;
                         const isOvertime = e.hours > 8;
                         return (
                             <div key={e.id} className={`rounded-lg border p-4 space-y-2 ${isOvertime ? "border-destructive/40 bg-destructive/5" : "bg-card"}`}>
@@ -158,6 +245,7 @@ export default function TimeEntryManagement() {
                                     </p>
                                 )}
                                 <p className="font-medium text-sm truncate">{user?.name || "—"}</p>
+                                <p className="text-xs text-muted-foreground truncate">Cliente: {project?.client || "—"}</p>
                                 <p className="text-sm text-muted-foreground truncate">
                                     {project ? `[${project.code}] ${project.name}` : "—"}
                                 </p>
@@ -213,6 +301,7 @@ export default function TimeEntryManagement() {
                             <TableRow>
                                 <TableHead>Fecha</TableHead>
                                 <TableHead>Empleado</TableHead>
+                                <TableHead>Cliente</TableHead>
                                 <TableHead>Proyecto</TableHead>
                                 <TableHead>Tarea</TableHead>
                                 <TableHead className="text-right">Horas</TableHead>
@@ -225,20 +314,21 @@ export default function TimeEntryManagement() {
                         <TableBody>
                             {loadingEntries ? (
                                 <TableRow>
-                                    <TableCell colSpan={9} className="text-center py-10">
+                                    <TableCell colSpan={10} className="text-center py-10">
                                         <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
                                     </TableCell>
                                 </TableRow>
-                            ) : entries.map(e => {
-                                const user = users.find(u => u.id === e.user_id);
-                                const project = projects.find(p => p.id === e.project_id);
-                                const task = tasks.find(t => t.id === e.task_id);
+                            ) : visibleEntries.map(e => {
+                                const user = e._user;
+                                const project = e._project;
+                                const task = e._task;
                                 const isOvertime = e.hours > 8;
 
                                 return (
                                     <TableRow key={e.id} className={isOvertime ? "bg-destructive/5" : ""}>
                                         <TableCell>{formatSpanishDate(e.date)}</TableCell>
                                         <TableCell className="font-medium">{user?.name || e.user_id.split("-")[0]}</TableCell>
+                                        <TableCell>{project?.client || "—"}</TableCell>
                                         <TableCell className="max-w-[200px] truncate">
                                             {project ? `[${project.code}] ${project.name}` : "—"}
                                         </TableCell>
@@ -294,9 +384,9 @@ export default function TimeEntryManagement() {
                                     </TableRow>
                                 );
                             })}
-                            {!loadingEntries && entries.length === 0 && (
+                            {!loadingEntries && visibleEntries.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={9} className="text-center py-10 text-muted-foreground">
+                                    <TableCell colSpan={10} className="text-center py-10 text-muted-foreground">
                                         No hay registros para mostrar.
                                     </TableCell>
                                 </TableRow>

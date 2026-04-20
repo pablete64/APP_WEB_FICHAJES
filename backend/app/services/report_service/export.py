@@ -16,6 +16,7 @@ def generate_xlsx_export(db: Session, **filters) -> bytes:
     query = db.query(
         Project.code.label("project_code"),
         Project.name.label("project_name"),
+        Project.client.label("project_client"),
         Project.distance_from_workshop.label("project_distance"),
         Project.travel_time.label("project_travel_time"),
         Project.km_rate.label("project_km_rate"),
@@ -50,6 +51,7 @@ def generate_xlsx_export(db: Session, **filters) -> bytes:
             projects_dict[p_code] = {
                 "code": p_code,
                 "name": entry.project_name,
+                "client": entry.project_client,
                 "rows": []
             }
         
@@ -60,6 +62,7 @@ def generate_xlsx_export(db: Session, **filters) -> bytes:
             "emp_name": entry.employee_name,
             "task_code": entry.task_code,
             "task_name": entry.task_name,
+            "project_client": entry.project_client,
             "hours": float(entry.effective_hours),
             "overtime": float(entry.overtime_hours),
             "travel_time": float(entry.travel_time or 0),
@@ -104,23 +107,24 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
         "B": 10,   # Festivo
         "C": 14,   # Cód. empleado
         "D": 25,   # Nombre
-        "E": 12,   # Cód. artículo
-        "F": 25,   # Desc. artículo
-        "G": 10,   # Horas
-        "H": 10,   # H. Extra
-        "I": 28,   # Horas extras sin desplazamiento
-        "J": 12,   # Desplaz. (h)
-        "K": 18,   # Horas productivas
-        "L": 15,   # Transporte
-        "M": 10,   # KMs
-        "N": 12,   # Coste KM
-        "O": 10,   # Dieta (S/N)
-        "P": 12,   # Importe Dieta
+        "E": 22,   # Cliente
+        "F": 12,   # Cód. artículo
+        "G": 25,   # Desc. artículo
+        "H": 10,   # Horas
+        "I": 10,   # H. Extra
+        "J": 28,   # Horas extras sin desplazamiento
+        "K": 12,   # Desplaz. (h)
+        "L": 18,   # Horas productivas
+        "M": 15,   # Transporte
+        "N": 10,   # KMs
+        "O": 12,   # Coste KM
+        "P": 10,   # Dieta (S/N)
+        "Q": 12,   # Importe Dieta
     }
     for col_letter, width in col_widths.items():
         ws.column_dimensions[col_letter].width = width
 
-    HEADERS = ["Fecha", "Festivo", "Cód. empleado", "Nombre", "Cód. artículo", "Desc. artículo", 
+    HEADERS = ["Fecha", "Festivo", "Cód. empleado", "Nombre", "Cliente", "Cód. artículo", "Desc. artículo", 
                "Horas", "H. Extra", "Horas extras sin desplazamiento", "Desplaz. (h)", "Horas productivas",
                "Transporte", "KMs", "Coste KM", "Dieta", "Importe Dieta"]
 
@@ -206,6 +210,7 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
                 "SÍ" if is_holiday else "",                            # Festivo
                 int(emp_code) if emp_code.isdigit() else emp_code,     # Cód. empleado
                 row_info["emp_name"],                                  # Nombre operario
+                row_info["project_client"] or "",                      # Cliente
                 int(task_code) if task_code.isdigit() else task_code,  # Cód. artículo (tarea)
                 row_info["task_name"],                                 # Desc. artículo
                 effective_hours,                                       # Horas normales
@@ -233,11 +238,11 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
                     cell.alignment = data_alignment_center
                 elif col_idx == 2:  # Festivo
                     cell.alignment = data_alignment_center
-                elif col_idx in (3, 5):  # códigos numéricos
+                elif col_idx in (3, 6):  # códigos numéricos
                     cell.alignment = data_alignment_center
-                elif col_idx in (4, 6, 12, 15, 16):  # textos y etiquetas
+                elif col_idx in (4, 5, 7, 13, 16):  # textos y etiquetas
                     cell.alignment = data_alignment_left
-                elif col_idx in (7, 8, 9, 10, 11, 13, 14, 16):  # numéricos
+                elif col_idx in (8, 9, 10, 11, 12, 14, 15, 17):  # numéricos
                     cell.alignment = data_alignment_right
                     cell.number_format = '#,##0.00'
 
@@ -254,13 +259,13 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
         total_font = Font(name="Arial", bold=True, size=10)
         total_fill = PatternFill("solid", fgColor="E2EFDA")  # verde claro
 
-        for col in range(1, 7):
+        for col in range(1, 8):
             c = ws.cell(row=current_row, column=col)
             c.value = ""
             c.border = thin_border
             c.fill = total_fill
 
-        ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=6)
+        ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=7)
         label_cell = ws.cell(row=current_row, column=1)
         label_cell.value = f"TOTAL {project['code']}"
         label_cell.font = total_font
@@ -268,8 +273,8 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
         label_cell.fill = total_fill
 
         # Fórmula SUM para Horas (col G)
-        sum_cell = ws.cell(row=current_row, column=7)
-        sum_cell.value = f"=SUM(G{first_data_row}:G{last_data_row})"
+        sum_cell = ws.cell(row=current_row, column=8)
+        sum_cell.value = f"=SUM(H{first_data_row}:H{last_data_row})"
         sum_cell.font = total_font
         sum_cell.alignment = data_alignment_right
         sum_cell.number_format = '#,##0.00'
@@ -277,8 +282,8 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
         sum_cell.fill = total_fill
 
         # Fórmula SUM para H. Extra (col H)
-        overtime_cell = ws.cell(row=current_row, column=8)
-        overtime_cell.value = f"=SUM(H{first_data_row}:H{last_data_row})"
+        overtime_cell = ws.cell(row=current_row, column=9)
+        overtime_cell.value = f"=SUM(I{first_data_row}:I{last_data_row})"
         overtime_cell.font = total_font
         overtime_cell.alignment = data_alignment_right
         overtime_cell.number_format = '#,##0.00'
@@ -286,8 +291,8 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
         overtime_cell.fill = total_fill
 
         # Fórmula SUM para Horas extra sin desplazamiento (col I)
-        travel_cell = ws.cell(row=current_row, column=9)
-        travel_cell.value = f"=SUM(I{first_data_row}:I{last_data_row})"
+        travel_cell = ws.cell(row=current_row, column=10)
+        travel_cell.value = f"=SUM(J{first_data_row}:J{last_data_row})"
         travel_cell.font = total_font
         travel_cell.alignment = data_alignment_right
         travel_cell.number_format = '#,##0.00'
@@ -295,8 +300,8 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
         travel_cell.fill = total_fill
 
         # Fórmula SUM para Desplaz. (col J)
-        displacement_total_cell = ws.cell(row=current_row, column=10)
-        displacement_total_cell.value = f"=SUM(J{first_data_row}:J{last_data_row})"
+        displacement_total_cell = ws.cell(row=current_row, column=11)
+        displacement_total_cell.value = f"=SUM(K{first_data_row}:K{last_data_row})"
         displacement_total_cell.font = total_font
         displacement_total_cell.alignment = data_alignment_right
         displacement_total_cell.number_format = '#,##0.00'
@@ -304,8 +309,8 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
         displacement_total_cell.fill = total_fill
 
         # Fórmula SUM para Horas productivas (col K)
-        productive_total_cell = ws.cell(row=current_row, column=11)
-        productive_total_cell.value = f"=SUM(K{first_data_row}:K{last_data_row})"
+        productive_total_cell = ws.cell(row=current_row, column=12)
+        productive_total_cell.value = f"=SUM(L{first_data_row}:L{last_data_row})"
         productive_total_cell.font = total_font
         productive_total_cell.alignment = data_alignment_right
         productive_total_cell.number_format = '#,##0.00'
@@ -313,8 +318,8 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
         productive_total_cell.fill = total_fill
 
         # Columna de totales para KMs (col M)
-        km_total_cell = ws.cell(row=current_row, column=13)
-        km_total_cell.value = f"=SUM(M{first_data_row}:M{last_data_row})"
+        km_total_cell = ws.cell(row=current_row, column=14)
+        km_total_cell.value = f"=SUM(N{first_data_row}:N{last_data_row})"
         km_total_cell.font = total_font
         km_total_cell.alignment = data_alignment_right
         km_total_cell.number_format = '#,##0.00'

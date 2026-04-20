@@ -27,6 +27,7 @@ export interface TimeEntryCreate {
 export interface TimeEntryResponse extends TimeEntryCreate {
     id: string;
     user_id: string;
+    created_at?: string;
     travel_time?: number;
     ticket_attachments: TicketAttachmentResponse[];
 }

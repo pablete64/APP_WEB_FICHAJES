@@ -30,7 +30,7 @@ export default function ProjectsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminProjects"] });
       toast.success("Proyecto creado");
-      setName(""); setCode(""); setLocation(""); setDistance("0");
+      setName(""); setCode(""); setClient(""); setLocation(""); setDistance("0");
       setTravelTime("0");
       setSelectedUsers([]); setProjectType("standard");
 
@@ -63,6 +63,7 @@ export default function ProjectsPage() {
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
+  const [client, setClient] = useState("");
   const [location, setLocation] = useState("");
   const [distance, setDistance] = useState("0");
   const [travelTime, setTravelTime] = useState("0");
@@ -74,7 +75,7 @@ export default function ProjectsPage() {
 
   const resetForm = () => {
     setEditingProjectId(null);
-    setName(""); setCode(""); setLocation(""); setDistance("0"); setTravelTime("0");
+    setName(""); setCode(""); setClient(""); setLocation(""); setDistance("0"); setTravelTime("0");
     setKmRate("0.19");
     setStartDate(new Date().toISOString().split("T")[0]);
     setSelectedUsers([]); setProjectType("standard");
@@ -93,6 +94,7 @@ export default function ProjectsPage() {
     const payload = {
       name,
       code,
+      client,
       location,
       distance_from_workshop: parseFloat(distance) || 0,
       travel_time: parseInt(travelTime) || 0,
@@ -114,6 +116,7 @@ export default function ProjectsPage() {
     setEditingProjectId(p.id);
     setName(p.name);
     setCode(p.code);
+    setClient(p.client || "");
     setLocation(p.location || "");
     setDistance(p.distance_from_workshop?.toString() || "0");
     setTravelTime(((p.travel_time || 0) / 2).toString()); // Mostrar solo ida
@@ -175,6 +178,7 @@ export default function ProjectsPage() {
               </div>
               <div><Label>Nombre del Proyecto</Label><Input value={name} onChange={e => setName(e.target.value)} /></div>
               <div><Label>Código del Proyecto</Label><Input value={code} onChange={e => setCode(e.target.value)} placeholder={projectType === "non-productive" ? "000" : ""} /></div>
+              <div><Label>Cliente</Label><Input value={client} onChange={e => setClient(e.target.value)} placeholder="Ej: Thyssen, Bamesa..." /></div>
               <div><Label>Ubicación</Label><Input value={location} onChange={e => setLocation(e.target.value)} /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label>Distancia taller (km)</Label><Input type="number" value={distance} onChange={e => setDistance(e.target.value)} /></div>
@@ -225,6 +229,7 @@ export default function ProjectsPage() {
                   <Badge variant="secondary">{p.code}</Badge>
                   <span className="font-semibold text-sm truncate">{p.name}</span>
                 </div>
+                <p className="text-xs text-muted-foreground mt-1 truncate">Cliente: {p.client || "—"}</p>
                 <p className="text-xs text-muted-foreground mt-1 truncate">{p.location || "—"}</p>
               </div>
              <div className="flex gap-1">
@@ -257,6 +262,7 @@ export default function ProjectsPage() {
               <TableRow>
                 <TableHead>Código</TableHead>
                 <TableHead>Nombre</TableHead>
+                <TableHead>Cliente</TableHead>
                 <TableHead>Ubicación</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Inicio</TableHead>
@@ -269,6 +275,7 @@ export default function ProjectsPage() {
                 <TableRow key={p.id}>
                   <TableCell><Badge variant="secondary">{p.code}</Badge></TableCell>
                   <TableCell className="font-medium">{p.name}</TableCell>
+                  <TableCell>{p.client || "—"}</TableCell>
                   <TableCell>{p.location}</TableCell>
                   <TableCell>{TYPE_LABELS[p.type] || p.type}</TableCell>
                   <TableCell>{p.start_date}</TableCell>

@@ -30,7 +30,7 @@ interface TimeEntryDialogProps {
     users: any[];
     projects: any[];
     tasks: any[];
-    onSave: (entry: TimeEntryCreate) => Promise<void>;
+    onSave: (entry: TimeEntryCreate) => Promise<TimeEntryResponse | void>;
 }
 
 export function TimeEntryDialog({
@@ -46,6 +46,8 @@ export function TimeEntryDialog({
     const [loading, setLoading] = useState(false);
     const [managedEntry, setManagedEntry] = useState<TimeEntryResponse | null>(entry || null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const pendingFileInputRef = useRef<HTMLInputElement>(null);
+    const [pendingAttachments, setPendingAttachments] = useState<File[]>([]);
     const [formData, setFormData] = useState<Partial<TimeEntryCreate>>({
         date: new Date().toISOString().split("T")[0],
         hours: 0,
@@ -55,6 +57,7 @@ export function TimeEntryDialog({
 
     useEffect(() => {
         setManagedEntry(entry || null);
+        setPendingAttachments([]);
         if (entry) {
             setFormData({
                 user_id: entry.user_id,
@@ -106,6 +109,21 @@ export function TimeEntryDialog({
         () => tasks.find((task) => task.id === formData.task_id),
         [tasks, formData.task_id]
     );
+    const taskRequiresExtraFields = Boolean(selectedTask?.requires_extra_fields);
+
+    useEffect(() => {
+        if (taskRequiresExtraFields) return;
+        setFormData((prev) => ({
+            ...prev,
+            vehicle_type: undefined,
+            meals: false,
+            meal_ticket_amount: undefined,
+            distance_origin: undefined,
+            trip_type: undefined,
+            travel_time: 0,
+        }));
+        setPendingAttachments([]);
+    }, [taskRequiresExtraFields]);
 
     const handleSave = async () => {
         if (!formData.user_id || !formData.project_id || !formData.task_id) {
@@ -120,7 +138,14 @@ export function TimeEntryDialog({
                     : undefined,
             };
 
-            await onSave(payload);
+            const savedEntry = await onSave(payload);
+            if (!managedEntry && savedEntry?.id && pendingAttachments.length > 0) {
+                let updated: TimeEntryResponse | null = null;
+                for (const file of pendingAttachments) {
+                    updated = await timeEntryService.uploadTicketPhoto(savedEntry.id, file);
+                }
+                if (updated) syncManagedEntry(updated);
+            }
             onOpenChange(false);
         } finally {
             setLoading(false);
@@ -161,6 +186,13 @@ export function TimeEntryDialog({
         const files = Array.from(e.target.files || []);
         if (files.length === 0) return;
         await uploadMutation.mutateAsync(files);
+        e.target.value = "";
+    };
+
+    const handlePendingAttachmentSelection = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+        setPendingAttachments((prev) => [...prev, ...files]);
         e.target.value = "";
     };
 
@@ -273,138 +305,175 @@ export function TimeEntryDialog({
                         </div>
                     </div>
 
-                    <div className="border-t pt-4">
-                        <h4 className="text-sm font-medium mb-4">Campos Adicionales (Desplazamiento/Dietas)</h4>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-                            <div className="space-y-2">
-                                <Label>Vehículo</Label>
-                                <Select
-                                    value={formData.vehicle_type || "none"}
-                                    onValueChange={(val) => setFormData({ 
-                                        ...formData, 
-                                        vehicle_type: val === "none" ? undefined : val,
-                                        trip_type: val === "none" ? undefined : "round"
-                                    })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Tipo de vehículo" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">Ninguno</SelectItem>
-                                        <SelectItem value="coche_personal">Coche particular</SelectItem>
-                                        <SelectItem value="moto_personal">Moto particular</SelectItem>
-                                        <SelectItem value="company">Vehículo de empresa</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="invisible hidden sm:block">Dieta</Label>
-                                <div className="flex items-center space-x-2 h-10">
-                                    <Switch
-                                        id="meals"
-                                        checked={formData.meals}
-                                        onCheckedChange={(val) => setFormData({
-                                            ...formData,
-                                            meals: val,
-                                            meal_ticket_amount: val ? formData.meal_ticket_amount : undefined,
+                    {taskRequiresExtraFields && (
+                        <div className="border-t pt-4">
+                            <h4 className="text-sm font-medium mb-4">Campos Adicionales (Desplazamiento/Dietas)</h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                                <div className="space-y-2">
+                                    <Label>Vehículo</Label>
+                                    <Select
+                                        value={formData.vehicle_type || "none"}
+                                        onValueChange={(val) => setFormData({ 
+                                            ...formData, 
+                                            vehicle_type: val === "none" ? undefined : val,
+                                            trip_type: val === "none" ? undefined : "round"
                                         })}
-                                    />
-                                    <Label htmlFor="meals" className="cursor-pointer font-bold text-primary">Cobrar Dieta</Label>
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Tipo de vehículo" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">Ninguno</SelectItem>
+                                            <SelectItem value="coche_personal">Coche particular</SelectItem>
+                                            <SelectItem value="moto_personal">Moto particular</SelectItem>
+                                            <SelectItem value="company">Vehículo de empresa</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
+
+                                <div className="space-y-2">
+                                    <Label className="invisible hidden sm:block">Dieta</Label>
+                                    <div className="flex items-center space-x-2 h-10">
+                                        <Switch
+                                            id="meals"
+                                            checked={formData.meals}
+                                            onCheckedChange={(val) => setFormData({
+                                                ...formData,
+                                                meals: val,
+                                                meal_ticket_amount: val ? formData.meal_ticket_amount : undefined,
+                                            })}
+                                        />
+                                        <Label htmlFor="meals" className="cursor-pointer font-bold text-primary">Cobrar Dieta</Label>
+                                    </div>
+                                </div>
+
+                                {formData.meals && (
+                                    <div className="space-y-2 bg-primary/5 p-3 rounded-lg border border-primary/20 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+                                        <Label className="text-[10px] font-bold uppercase text-primary">
+                                            Importe Ticket Dieta (€)
+                                        </Label>
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            placeholder="0.00"
+                                            className="bg-background font-bold h-8"
+                                            value={(formData as any).meal_ticket_amount ?? ""}
+                                            onChange={(e) => setFormData({ ...formData, meal_ticket_amount: e.target.value === "" ? undefined : parseFloat(e.target.value) } as any)}
+                                        />
+                                        <p className="text-[8px] text-muted-foreground italic">Verifica el ticket adjunto.</p>
+                                    </div>
+                                )}
                             </div>
 
                             {formData.meals && (
-                                <div className="space-y-2 bg-primary/5 p-3 rounded-lg border border-primary/20 shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
-                                    <Label className="text-[10px] font-bold uppercase text-primary">
-                                        Importe Ticket Dieta (€)
-                                    </Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        placeholder="0.00"
-                                        className="bg-background font-bold h-8"
-                                        value={(formData as any).meal_ticket_amount ?? ""}
-                                        onChange={(e) => setFormData({ ...formData, meal_ticket_amount: e.target.value === "" ? undefined : parseFloat(e.target.value) } as any)}
-                                    />
-                                    <p className="text-[8px] text-muted-foreground italic">Verifica el ticket adjunto.</p>
-                                </div>
-                            )}
-                        </div>
-
-                    </div>
-
-                        {managedEntry && (
                             <div className="mt-4 pt-4 border-t space-y-2">
                                 <Label className="text-xs font-semibold uppercase text-muted-foreground italic">
                                     Tickets adjuntos
                                 </Label>
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept="image/*"
-                                    multiple
-                                    className="hidden"
-                                    onChange={handleAttachmentUpload}
-                                />
+                                {managedEntry ? (
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        className="hidden"
+                                        onChange={handleAttachmentUpload}
+                                    />
+                                ) : (
+                                    <input
+                                        ref={pendingFileInputRef}
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        className="hidden"
+                                        onChange={handlePendingAttachmentSelection}
+                                    />
+                                )}
                                 <div className="rounded-md border bg-muted/30 p-3 space-y-3">
                                     <div className="flex items-center justify-between gap-3">
                                         <p className="text-sm text-muted-foreground">
-                                            {managedEntry.ticket_attachments?.length
-                                                ? `${managedEntry.ticket_attachments.length} ticket(s) adjunto(s)`
-                                                : "No hay tickets adjuntos en este fichaje."}
+                                            {managedEntry
+                                                ? managedEntry.ticket_attachments?.length
+                                                    ? `${managedEntry.ticket_attachments.length} ticket(s) adjunto(s)`
+                                                    : "No hay tickets adjuntos en este fichaje."
+                                                : pendingAttachments.length
+                                                    ? `${pendingAttachments.length} ticket(s) preparado(s) para subir al crear el fichaje.`
+                                                    : "Selecciona los tickets que quieras subir con el fichaje."}
                                         </p>
                                         <Button
                                             type="button"
                                             variant="outline"
                                             size="sm"
                                             className="gap-2"
-                                            onClick={() => fileInputRef.current?.click()}
-                                            disabled={uploadMutation.isPending}
+                                            onClick={() => managedEntry ? fileInputRef.current?.click() : pendingFileInputRef.current?.click()}
+                                            disabled={managedEntry ? uploadMutation.isPending : false}
                                         >
-                                            {uploadMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                                            {managedEntry && uploadMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
                                             Subir ticket
                                         </Button>
                                     </div>
                                     <div className="space-y-2">
-                                        {(managedEntry.ticket_attachments || []).map((attachment, index) => (
-                                            <div key={attachment.id} className="flex items-center justify-between gap-3 rounded border bg-background px-3 py-2">
-                                                <div className="min-w-0">
-                                                    <p className="text-sm font-medium">Ticket {index + 1}</p>
-                                                    <p className="truncate text-xs text-muted-foreground">
-                                                        {attachment.original_filename || attachment.file_path.split("/").pop()}
-                                                    </p>
+                                        {managedEntry
+                                            ? (managedEntry.ticket_attachments || []).map((attachment, index) => (
+                                                <div key={attachment.id} className="flex items-center justify-between gap-3 rounded border bg-background px-3 py-2">
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-medium">Ticket {index + 1}</p>
+                                                        <p className="truncate text-xs text-muted-foreground">
+                                                            {attachment.original_filename || attachment.file_path.split("/").pop()}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="gap-1.5"
+                                                            onClick={() => window.open(attachment.file_path, "_blank")}
+                                                        >
+                                                            <ExternalLink className="h-4 w-4" />
+                                                            Abrir
+                                                        </Button>
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="gap-1.5 text-destructive hover:text-destructive"
+                                                            onClick={() => deleteAttachmentMutation.mutate(attachment.id)}
+                                                            disabled={deleteAttachmentMutation.isPending}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                            Borrar
+                                                        </Button>
+                                                    </div>
                                                 </div>
-                                                <div className="flex items-center gap-2">
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="gap-1.5"
-                                                        onClick={() => window.open(attachment.file_path, "_blank")}
-                                                    >
-                                                        <ExternalLink className="h-4 w-4" />
-                                                        Abrir
-                                                    </Button>
+                                            ))
+                                            : pendingAttachments.map((file, index) => (
+                                                <div key={`${file.name}-${index}`} className="flex items-center justify-between gap-3 rounded border bg-background px-3 py-2">
+                                                    <div className="min-w-0">
+                                                        <p className="text-sm font-medium">Ticket {index + 1}</p>
+                                                        <p className="truncate text-xs text-muted-foreground">
+                                                            {file.name}
+                                                        </p>
+                                                    </div>
                                                     <Button
                                                         type="button"
                                                         variant="ghost"
                                                         size="sm"
                                                         className="gap-1.5 text-destructive hover:text-destructive"
-                                                        onClick={() => deleteAttachmentMutation.mutate(attachment.id)}
-                                                        disabled={deleteAttachmentMutation.isPending}
+                                                        onClick={() => setPendingAttachments((prev) => prev.filter((_, fileIndex) => fileIndex !== index))}
                                                     >
                                                         <Trash2 className="h-4 w-4" />
-                                                        Borrar
+                                                        Quitar
                                                     </Button>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            ))}
                                     </div>
                                 </div>
                             </div>
                         )}
+                        </div>
+                    )}
                     </div>
 
                 <DialogFooter className="flex-col sm:flex-row gap-2">

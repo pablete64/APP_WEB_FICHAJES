@@ -9,6 +9,7 @@ class ProjectUserAssignment(BaseModel):
 class ProjectBase(BaseModel):
     name: str
     code: str
+    client: Optional[str] = None
     location: Optional[str] = None
     distance_from_workshop: float = 0.0
     travel_time: Optional[int] = 0           # minutos de ida (el servicio lo multiplicará x2)
@@ -24,6 +25,7 @@ class ProjectCreate(ProjectBase):
 class ProjectUpdate(BaseModel):
     name: Optional[str] = None
     code: Optional[str] = None
+    client: Optional[str] = None
     location: Optional[str] = None
     distance_from_workshop: Optional[float] = None
     travel_time: Optional[int] = None

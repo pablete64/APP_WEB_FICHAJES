@@ -8,6 +8,7 @@ export interface ProjectUserAssignment {
 export interface ProjectCreate {
     name: string;
     code: string;
+    client?: string;
     location?: string;
     distance_from_workshop: number;
     travel_time?: number; // minutos de ida (el backend lo multiplica x2)
@@ -22,6 +23,7 @@ export interface ProjectResponse {
     id: string;
     name: string;
     code: string;
+    client?: string;
     location?: string;
     distance_from_workshop: number;
     travel_time?: number; // tiempo total ida+vuelta

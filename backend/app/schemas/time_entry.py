@@ -31,5 +31,6 @@ class TimeEntryCreate(BaseModel):
 class TimeEntryResponse(TimeEntryCreate):
     id: str
     user_id: str
+    created_at: Optional[datetime] = None
     ticket_attachments: list[TicketAttachmentResponse] = []
     model_config = ConfigDict(from_attributes=True)
