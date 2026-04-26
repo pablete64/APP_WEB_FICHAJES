@@ -289,6 +289,55 @@ def test_upload_ticket_photo_supports_multiple_attachments(user_client, admin_cl
     assert len(second_upload.json()["ticket_attachments"]) == 2
 
 
+def test_worker_cannot_create_diet_without_ticket_on_combined_flow(user_client, admin_client, seed_projects, seed_tasks, normal_user):
+    project = get_project_by_type(seed_projects, "standard")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")
+    task = get_task_by_code(seed_tasks, "400")
+
+    response = user_client.post(
+        "/time-entries/with-tickets",
+        data={
+            "project_id": project.id,
+            "task_id": task.id,
+            "date": date.today().isoformat(),
+            "hours": "8.0",
+            "vehicle_type": "coche_personal",
+            "distance_origin": "NAVE",
+            "meals": "true",
+        },
+    )
+
+    assert response.status_code == 400
+    assert "ticket" in response.json()["detail"].lower()
+
+
+def test_worker_can_create_diet_with_ticket_on_combined_flow(user_client, admin_client, seed_projects, seed_tasks, normal_user):
+    project = get_project_by_type(seed_projects, "standard")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")
+    task = get_task_by_code(seed_tasks, "400")
+
+    response = user_client.post(
+        "/time-entries/with-tickets",
+        data={
+            "project_id": project.id,
+            "task_id": task.id,
+            "date": date.today().isoformat(),
+            "hours": "8.0",
+            "vehicle_type": "coche_personal",
+            "distance_origin": "NAVE",
+            "meals": "true",
+            "meal_ticket_amount": "12.50",
+        },
+        files={"files": ("ticket-1.jpg", BytesIO(b"fake-jpg-image"), "image/jpeg")},
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["meals"] is True
+    assert len(payload["ticket_attachments"]) == 1
+    assert payload["meal_ticket_photo"]
+
+
 def test_delete_ticket_attachment_removes_only_selected_file(user_client, admin_client, seed_projects, seed_tasks, normal_user):
     project = get_project_by_type(seed_projects, "standard")
     admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")

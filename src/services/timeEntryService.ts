@@ -40,6 +40,34 @@ export const timeEntryService = {
         });
     },
 
+    createTimeEntryWithTickets: async (entry: TimeEntryCreate, files: File[]): Promise<TimeEntryResponse> => {
+        const form = new FormData();
+        form.append('project_id', entry.project_id);
+        form.append('task_id', entry.task_id);
+        form.append('date', entry.date);
+        form.append('hours', String(entry.hours));
+        form.append('overtime_hours', String(entry.overtime_hours ?? 0));
+        form.append('is_holiday', String(entry.is_holiday ?? false));
+
+        if (entry.vehicle_type != null) form.append('vehicle_type', entry.vehicle_type);
+        if (entry.meals != null) form.append('meals', String(entry.meals));
+        if (entry.meal_ticket_amount != null) form.append('meal_ticket_amount', String(entry.meal_ticket_amount));
+        if (entry.meal_ticket_photo != null) form.append('meal_ticket_photo', entry.meal_ticket_photo);
+        if (entry.distance_origin != null) form.append('distance_origin', entry.distance_origin);
+        if (entry.trip_type != null) form.append('trip_type', entry.trip_type);
+        if (entry.travel_time != null) form.append('travel_time', String(entry.travel_time));
+        if (entry.user_id != null) form.append('user_id', entry.user_id);
+
+        for (const file of files) {
+            form.append('files', file);
+        }
+
+        return fetchApi<TimeEntryResponse>('/time-entries/with-tickets', {
+            method: 'POST',
+            body: form,
+        });
+    },
+
     uploadTicketPhoto: async (entryId: string, file: File): Promise<TimeEntryResponse> => {
         const form = new FormData();
         form.append('file', file);

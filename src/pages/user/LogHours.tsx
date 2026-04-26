@@ -186,9 +186,11 @@ export default function LogHours() {
   const mutation = useMutation({
     mutationFn: async () => {
       if (!user || !projectId || !taskCode || !hours) throw new Error("Datos incompletos");
+      if (isClientTask && hasMealTicket && ticketFiles.length === 0) {
+        throw new Error("Debes adjuntar al menos un ticket para imputar una dieta.");
+      }
 
-      // 1. Create the time entry (travel_time is 0 — admin sets it later)
-      const entry = await timeEntryService.createTimeEntry({
+      const payload = {
         project_id: projectId,
         task_id: (selectedTaskObj as any)?.id || "",
         date,
@@ -203,16 +205,13 @@ export default function LogHours() {
           trip_type: "round",
           travel_time: 0,
         }),
-      });
+      };
 
-      // 2. Upload ticket photo if provided
-      if (isClientTask && hasMealTicket && ticketFiles.length > 0 && entry.id) {
-        for (const ticketFile of ticketFiles) {
-          await timeEntryService.uploadTicketPhoto(entry.id, ticketFile);
-        }
+      if (isClientTask) {
+        return timeEntryService.createTimeEntryWithTickets(payload, hasMealTicket ? ticketFiles : []);
       }
 
-      return entry;
+      return timeEntryService.createTimeEntry(payload);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["myEntries"] });
@@ -471,7 +470,7 @@ export default function LogHours() {
                             </div>
                           )}
                           <p className="text-xs text-muted-foreground mt-1">
-                            Opcional. Puedes anadir varias fotos y se optimizan automaticamente antes de subirlas.
+                            Obligatorio si imputas dieta. Puedes anadir varias fotos y se optimizan automaticamente antes de subirlas.
                           </p>
                         </div>
                       </div>

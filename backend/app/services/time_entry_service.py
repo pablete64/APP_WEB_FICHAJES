@@ -115,7 +115,13 @@ def _validate_time_entry_business_rules(db: Session, entry_in: TimeEntryCreate, 
     return project, task
 
 
-def create_time_entry(db: Session, entry_in: TimeEntryCreate, user_id: str, is_admin: bool = False) -> TimeEntry:
+def create_time_entry(
+    db: Session,
+    entry_in: TimeEntryCreate,
+    user_id: str,
+    is_admin: bool = False,
+    commit: bool = True,
+) -> TimeEntry:
     # 1. Determinar el user_id final (admin puede sobreescribir)
     target_user_id = user_id
     if is_admin and entry_in.user_id:
@@ -156,8 +162,9 @@ def create_time_entry(db: Session, entry_in: TimeEntryCreate, user_id: str, is_a
     log_event(db, user_id, "TimeEntry", db_entry.id, "CREATE", 
               changes={"hours": float(db_entry.hours), "date": str(db_entry.date), "task_id": db_entry.task_id})
     
-    db.commit()
-    db.refresh(db_entry)
+    if commit:
+        db.commit()
+        db.refresh(db_entry)
     return db_entry
 
 def delete_entry(db: Session, entry_id: str, actor_id: str | None = None):

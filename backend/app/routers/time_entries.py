@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, status, UploadFile, File, HTTPException, Form
 from sqlalchemy.orm import Session
 from typing import List
+from datetime import date as date_type
 import os, uuid, shutil
 
 from app.database.session import get_db
@@ -64,12 +65,103 @@ def _sync_primary_ticket_photo(entry: TimeEntry) -> None:
     )
     entry.meal_ticket_photo = attachments[0].file_path if attachments else None
 
+
+def _save_ticket_attachment(db: Session, entry: TimeEntry, file: UploadFile) -> str:
+    if not _is_allowed_ticket_upload(file):
+        raise HTTPException(status_code=400, detail="Formato no válido. Usa JPG, PNG, WebP, HEIC o HEIF.")
+
+    ext = os.path.splitext(file.filename or "")[1] or ".jpg"
+    filename = f"{uuid.uuid4()}{ext}"
+    dest = os.path.join(UPLOADS_DIR, filename)
+    with open(dest, "wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    attachment = TimeEntryTicket(
+        time_entry_id=entry.id,
+        file_path=f"/uploads/tickets/{filename}",
+        original_filename=file.filename,
+    )
+    db.add(attachment)
+    db.flush()
+    entry.ticket_attachments.append(attachment)
+    _sync_primary_ticket_photo(entry)
+    return dest
+
 router = APIRouter(prefix="/time-entries", tags=["Time Entries"])
 
 @router.post("/", response_model=TimeEntryResponse, status_code=status.HTTP_201_CREATED)
 def create_entry(entry: TimeEntryCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Crea un nuevo registro de horas para el usuario autenticado"""
     return time_entry_service.create_time_entry(db, entry_in=entry, user_id=current_user.id, is_admin=current_user.is_admin)
+
+
+@router.post("/with-tickets", response_model=TimeEntryResponse, status_code=status.HTTP_201_CREATED)
+def create_entry_with_tickets(
+    project_id: str = Form(...),
+    task_id: str = Form(...),
+    date: str = Form(...),
+    hours: float = Form(...),
+    overtime_hours: float = Form(0.0),
+    is_holiday: bool = Form(False),
+    vehicle_type: str | None = Form(None),
+    meals: bool | None = Form(None),
+    meal_ticket_amount: float | None = Form(None),
+    meal_ticket_photo: str | None = Form(None),
+    distance_origin: str | None = Form(None),
+    trip_type: str | None = Form(None),
+    travel_time: float | None = Form(0.0),
+    files: List[UploadFile] = File(default=[]),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Crea un fichaje junto con sus tickets en una sola operación."""
+    if meals is True and not files and not current_user.is_admin:
+        raise HTTPException(
+            status_code=400,
+            detail="Debes adjuntar al menos un ticket para imputar una dieta.",
+        )
+
+    try:
+        entry_date = date_type.fromisoformat(date)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail="Fecha no válida") from exc
+
+    entry_in = TimeEntryCreate(
+        project_id=project_id,
+        task_id=task_id,
+        date=entry_date,
+        hours=hours,
+        overtime_hours=overtime_hours,
+        is_holiday=is_holiday,
+        vehicle_type=vehicle_type,
+        meals=meals,
+        meal_ticket_amount=meal_ticket_amount,
+        meal_ticket_photo=meal_ticket_photo,
+        distance_origin=distance_origin,
+        trip_type=trip_type,
+        travel_time=travel_time,
+    )
+
+    saved_paths: List[str] = []
+    try:
+        entry = time_entry_service.create_time_entry(
+            db,
+            entry_in=entry_in,
+            user_id=current_user.id,
+            is_admin=current_user.is_admin,
+            commit=False,
+        )
+        for file in files:
+            saved_paths.append(_save_ticket_attachment(db, entry, file))
+        db.commit()
+        db.refresh(entry)
+        return entry
+    except Exception:
+        db.rollback()
+        for saved_path in saved_paths:
+            if os.path.exists(saved_path):
+                os.remove(saved_path)
+        raise
 
 @router.get("/", response_model=List[TimeEntryResponse])
 def get_all_entries(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: User = Depends(require_admin)):
@@ -111,25 +203,7 @@ def upload_ticket_photo(
 ):
     """Sube la foto del ticket de dieta y la asocia al fichaje."""
     entry = _get_entry_or_403(db, entry_id, current_user)
-
-    if not _is_allowed_ticket_upload(file):
-        raise HTTPException(status_code=400, detail="Formato no válido. Usa JPG, PNG, WebP, HEIC o HEIF.")
-
-    ext = os.path.splitext(file.filename or "")[1] or ".jpg"
-    filename = f"{uuid.uuid4()}{ext}"
-    dest = os.path.join(UPLOADS_DIR, filename)
-    with open(dest, "wb") as f:
-        shutil.copyfileobj(file.file, f)
-
-    attachment = TimeEntryTicket(
-        time_entry_id=entry.id,
-        file_path=f"/uploads/tickets/{filename}",
-        original_filename=file.filename,
-    )
-    db.add(attachment)
-    db.flush()
-    entry.ticket_attachments.append(attachment)
-    _sync_primary_ticket_photo(entry)
+    _save_ticket_attachment(db, entry, file)
     db.commit()
     db.refresh(entry)
     return entry
