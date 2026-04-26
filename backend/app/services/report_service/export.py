@@ -115,18 +115,19 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
         "J": 28,   # Horas extras sin desplazamiento
         "K": 12,   # Desplaz. (h)
         "L": 18,   # Horas productivas
-        "M": 15,   # Transporte
-        "N": 10,   # KMs
-        "O": 12,   # Coste KM
-        "P": 10,   # Dieta (S/N)
-        "Q": 12,   # Importe Dieta
+        "M": 15,   # Horas totales
+        "N": 15,   # Transporte
+        "O": 10,   # KMs
+        "P": 12,   # Coste KM
+        "Q": 10,   # Dieta (S/N)
+        "R": 12,   # Importe Dieta
     }
     for col_letter, width in col_widths.items():
         ws.column_dimensions[col_letter].width = width
 
     HEADERS = ["Fecha", "Festivo", "Cód. empleado", "Nombre", "Cliente", "Cód. artículo", "Desc. artículo", 
                "Horas", "H. Extra", "Horas extras sin desplazamiento", "Desplaz. (h)", "Horas productivas",
-               "Transporte", "KMs", "Coste KM", "Dieta", "Importe Dieta"]
+               "Horas totales", "Transporte", "KMs", "Coste KM", "Dieta", "Importe Dieta"]
 
     # Style for holiday rows
     holiday_fill = PatternFill("solid", fgColor="FFC7CE")  # light red
@@ -204,6 +205,7 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
             overtime_hours = row_info["overtime"]
             hours_without_travel = effective_hours + overtime_hours
             productive_hours = hours_without_travel - round_trip_travel
+            total_day_formula = f"=J{current_row}+K{current_row}"
 
             row_data = [
                 row_info["date"].strftime("%d-%m-%Y"),                 # Fecha
@@ -218,6 +220,7 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
                 hours_without_travel,                                  # Horas extra sin desplazamiento
                 round_trip_travel,                                     # Desplaz. (h) ida+vuelta
                 productive_hours,                                      # Horas productivas
+                total_day_formula,                                     # Horas totales del día
                 transporte,                                            # Transporte
                 kms,                                                   # KMs
                 km_cost,                                               # Coste KM
@@ -240,9 +243,9 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
                     cell.alignment = data_alignment_center
                 elif col_idx in (3, 6):  # códigos numéricos
                     cell.alignment = data_alignment_center
-                elif col_idx in (4, 5, 7, 13, 16):  # textos y etiquetas
+                elif col_idx in (4, 5, 7, 14, 17):  # textos y etiquetas
                     cell.alignment = data_alignment_left
-                elif col_idx in (8, 9, 10, 11, 12, 14, 15, 17):  # numéricos
+                elif col_idx in (8, 9, 10, 11, 12, 13, 15, 16, 18):  # numéricos
                     cell.alignment = data_alignment_right
                     cell.number_format = '#,##0.00'
 
@@ -267,7 +270,7 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
 
         ws.merge_cells(start_row=current_row, start_column=1, end_row=current_row, end_column=7)
         label_cell = ws.cell(row=current_row, column=1)
-        label_cell.value = f"TOTAL {project['code']}"
+        label_cell.value = f"TOTAL {project['code']} {project['name']}"
         label_cell.font = total_font
         label_cell.alignment = Alignment(horizontal="right", vertical="center")
         label_cell.fill = total_fill
@@ -317,34 +320,40 @@ def _build_openpyxl_wb(projects: list[dict]) -> bytes:
         productive_total_cell.border = thin_border
         productive_total_cell.fill = total_fill
 
-        # Columna de totales para KMs (col M)
-        km_total_cell = ws.cell(row=current_row, column=14)
-        km_total_cell.value = f"=SUM(N{first_data_row}:N{last_data_row})"
-        km_total_cell.font = total_font
-        km_total_cell.alignment = data_alignment_right
-        km_total_cell.number_format = '#,##0.00'
+        # Fórmula SUM para Horas totales (col M)
+        total_hours_cell = ws.cell(row=current_row, column=13)
+        total_hours_cell.value = f"=SUM(M{first_data_row}:M{last_data_row})"
+        total_hours_cell.font = total_font
+        total_hours_cell.alignment = data_alignment_right
+        total_hours_cell.number_format = '#,##0.00'
+        total_hours_cell.border = thin_border
+        total_hours_cell.fill = total_fill
+
+        # La columna KMs no necesita total en el pie del Excel.
+        km_total_cell = ws.cell(row=current_row, column=15)
+        km_total_cell.value = ""
         km_total_cell.border = thin_border
         km_total_cell.fill = total_fill
 
-        # Columna de totales para Coste KM (col N)
-        km_cost_total_cell = ws.cell(row=current_row, column=14)
-        km_cost_total_cell.value = f"=SUM(N{first_data_row}:N{last_data_row})"
+        # Columna de totales para Coste KM (col P)
+        km_cost_total_cell = ws.cell(row=current_row, column=16)
+        km_cost_total_cell.value = f"=SUM(P{first_data_row}:P{last_data_row})"
         km_cost_total_cell.font = total_font
         km_cost_total_cell.alignment = data_alignment_right
         km_cost_total_cell.number_format = '#,##0.00€'
         km_cost_total_cell.border = thin_border
         km_cost_total_cell.fill = total_fill
 
-        # Columna de totales para Importe Dieta (col P)
-        diet_total_cell = ws.cell(row=current_row, column=16)
-        diet_total_cell.value = f"=SUM(P{first_data_row}:P{last_data_row})"
+        # Columna de totales para Importe Dieta (col R)
+        diet_total_cell = ws.cell(row=current_row, column=18)
+        diet_total_cell.value = f"=SUM(R{first_data_row}:R{last_data_row})"
         diet_total_cell.font = total_font
         diet_total_cell.alignment = data_alignment_right
         diet_total_cell.number_format = '#,##0.00€'
         diet_total_cell.border = thin_border
         diet_total_cell.fill = total_fill
 
-        for col in (12, 15):
+        for col in (14, 17):
             c = ws.cell(row=current_row, column=col)
             c.value = ""
             c.border = thin_border

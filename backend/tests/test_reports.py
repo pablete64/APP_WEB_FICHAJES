@@ -1,3 +1,8 @@
+from io import BytesIO
+
+from openpyxl import load_workbook
+
+
 def test_reports_projects_aggregation(admin_client, user_client, seed_projects, seed_tasks, normal_user):
     # Simulamos algunas entradas
     project_id = seed_projects[0].id # P-STD
@@ -47,6 +52,38 @@ def test_export_csv_report(admin_client, user_client, seed_projects, seed_tasks,
     assert response.status_code == 200
     assert "spreadsheetml" in response.headers["content-type"] or "application/vnd" in response.headers["content-type"]
     assert "attachment" in response.headers["content-disposition"]
+
+
+def test_export_xlsx_includes_total_day_hours_column(admin_client, db_session, seed_projects, seed_tasks, normal_user):
+    project = seed_projects[0]
+    project.travel_time = 90
+    db_session.commit()
+
+    task_id = seed_tasks[3].id
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")
+    admin_client.post("/time-entries/", json={
+        "project_id": project.id,
+        "task_id": task_id,
+        "date": "2025-06-15",
+        "hours": 8.0,
+        "overtime_hours": 1.0,
+        "trip_type": "round",
+        "user_id": normal_user.id
+    })
+
+    response = admin_client.get("/reports/export")
+    assert response.status_code == 200
+
+    workbook = load_workbook(BytesIO(response.content), data_only=False)
+    sheet = workbook.active
+
+    assert sheet["M2"].value == "Horas totales"
+    assert sheet["M3"].value == "=J3+K3"
+    assert sheet["J3"].value == 9
+    assert sheet["K3"].value == 1.5
+    assert sheet["L3"].value == 7.5
+    assert sheet["M4"].value == "=SUM(M3:M3)"
+    assert sheet["O4"].value == ""
 
 # --- NUEVOS CASOS DE PRUEBA (FASE 9.5) ---
 
