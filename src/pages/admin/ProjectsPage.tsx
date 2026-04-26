@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { FolderKanban, Plus, Trash2, Edit } from "lucide-react";
 import { toast } from "sonner";
+import { formatDashboardDate } from "./dashboardUtils";
 
 const TYPE_LABELS: Record<string, string> = {
   standard: "Estándar",
@@ -295,7 +296,7 @@ export default function ProjectsPage() {
             </div>
             <div className="flex gap-2 flex-wrap">
               <span className="text-xs bg-muted rounded px-2 py-0.5">{TYPE_LABELS[p.type] || p.type}</span>
-              <span className="text-xs text-muted-foreground">{p.start_date}</span>
+              <span className="text-xs text-muted-foreground">{formatDashboardDate(p.start_date, true)}</span>
               {(p.travel_time || 0) > 0 && (
                 <span className="text-xs text-muted-foreground">Viaje: {p.travel_time}′</span>
               )}
@@ -328,7 +329,7 @@ export default function ProjectsPage() {
                   <TableCell>{p.client || "—"}</TableCell>
                   <TableCell>{p.location}</TableCell>
                   <TableCell>{TYPE_LABELS[p.type] || p.type}</TableCell>
-                  <TableCell>{p.start_date}</TableCell>
+                  <TableCell>{formatDashboardDate(p.start_date, true)}</TableCell>
                   <TableCell className="text-muted-foreground text-xs">
                     {(p.travel_time || 0) > 0 ? `${p.travel_time}′` : "—"}
                   </TableCell>

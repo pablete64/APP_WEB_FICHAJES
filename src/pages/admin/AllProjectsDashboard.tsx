@@ -7,7 +7,7 @@ import {
   ComposedChart, Line, Area, AreaChart, ReferenceLine,
   Treemap,
 } from "recharts";
-import { C, CHART_PALETTE, TREEMAP_PALETTE, calcTrend, Tip, Section, CustomCard, KPI, DynamicHeatmap, TreemapCell } from "./dashboardUtils";
+import { C, CHART_PALETTE, TREEMAP_PALETTE, calcTrend, Tip, Section, CustomCard, KPI, DynamicHeatmap, TreemapCell, formatDashboardDate } from "./dashboardUtils";
 
 const StatusBadge = ({ type }: { type: string }) => {
   const map: Record<string, { label: string; color: string; bg: string }> = {
@@ -177,7 +177,7 @@ export default function AllProjectsDashboard({
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
             <XAxis dataKey="date" stroke={C.dim} fontSize={10}
-              tickFormatter={v => (v || "").split("-").slice(1).join("/")} minTickGap={20} />
+              tickFormatter={v => formatDashboardDate(v, false)} minTickGap={20} />
             <YAxis yAxisId="h" stroke={C.dim} fontSize={10} unit="h" />
             <YAxis yAxisId="fj" orientation="right" stroke={C.accent2} fontSize={10} />
             <Tooltip content={<Tip />} />

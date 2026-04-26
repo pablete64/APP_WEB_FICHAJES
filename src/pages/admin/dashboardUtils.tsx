@@ -43,12 +43,23 @@ export const calcTrend = (data: any[], key: string): any[] => {
   return data.map((d, i) => ({ ...d, _trend: Math.max(0, +(slope * i + intercept).toFixed(2)) }));
 };
 
+const ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+export const formatDashboardDate = (value: string | undefined | null, includeYear = true): string => {
+  if (!value) return "";
+  const match = value.match(ISO_DATE_RE);
+  if (!match) return value;
+
+  const [, year, month, day] = match;
+  return includeYear ? `${day}/${month}/${year}` : `${day}/${month}`;
+};
+
 // ── Tooltip ──
 export const Tip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
     <div style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 10, padding: "10px 14px", fontSize: 12, boxShadow: "0 4px 24px rgba(0,0,0,0.1)" }}>
-      <div style={{ color: C.text, fontWeight: 700, marginBottom: 6 }}>{label}</div>
+      <div style={{ color: C.text, fontWeight: 700, marginBottom: 6 }}>{formatDashboardDate(label, true)}</div>
       {payload.filter((p: any) => p.value > 0).map((p: any, i: number) => (
         <div key={i} style={{ color: p.color || p.fill, margin: "2px 0", display: "flex", justifyContent: "space-between", gap: 16 }}>
           <span>{p.name}</span>
@@ -128,8 +139,8 @@ export const DynamicHeatmap = ({ data }: { data: any[] }) => {
           <tr>
             <th style={{ textAlign: "left", color: C.dim, fontWeight: 600, padding: "0 8px 8px 0", fontSize: 10, minWidth: 120 }}>Empleado</th>
             {dates.map(d => (
-              <th key={d} style={{ color: C.dim, fontWeight: 600, padding: "0 0 8px 0", fontSize: 9, width: 38, textAlign: "center" }}>
-                {(d || "").split("-").slice(1).join("/")}
+            <th key={d} style={{ color: C.dim, fontWeight: 600, padding: "0 0 8px 0", fontSize: 9, width: 38, textAlign: "center" }}>
+                {formatDashboardDate(d, false)}
               </th>
             ))}
             <th style={{ color: C.dim, fontWeight: 700, padding: "0 0 8px 8px", fontSize: 10 }}>Total</th>

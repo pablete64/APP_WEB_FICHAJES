@@ -8,7 +8,7 @@ import {
   ComposedChart, Line, ReferenceLine, Treemap,
 } from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { C, Tip, Section, CustomCard, KPI, DynamicHeatmap, TreemapCell } from "./dashboardUtils";
+import { C, Tip, Section, CustomCard, KPI, DynamicHeatmap, TreemapCell, formatDashboardDate } from "./dashboardUtils";
 import AllProjectsDashboard from "./AllProjectsDashboard";
 
 const ALL_MONTHS = [
@@ -161,7 +161,7 @@ export default function AdminDashboard() {
 
   const projectLabel = currentProject ? `[${currentProject.code}] ${currentProject.name}` : "";
   const periodLabel = startDate || endDate
-    ? `${startDate || "∞"} → ${endDate || "∞"}`
+    ? `${startDate ? formatDashboardDate(startDate, true) : "∞"} → ${endDate ? formatDashboardDate(endDate, true) : "∞"}`
     : selectedYear === "all" ? "Histórico total"
       : selectedMonth !== "all"
         ? `${ALL_MONTHS.find(m => m.value === selectedMonth)?.label} ${selectedYear}`
@@ -330,7 +330,7 @@ export default function AdminDashboard() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
                     <XAxis dataKey="date" stroke={C.dim} fontSize={10}
-                      tickFormatter={v => (v || "").split("-").pop() || ""} minTickGap={18} />
+                      tickFormatter={v => formatDashboardDate(v, false)} minTickGap={18} />
                     <YAxis stroke={C.dim} fontSize={10} unit="h" />
                     <Tooltip content={<Tip />} />
                     {categoryKeys.map(k => {
@@ -410,7 +410,7 @@ export default function AdminDashboard() {
                   <ComposedChart data={dailyTimelineData}>
                     <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
                     <XAxis dataKey="date" stroke={C.dim} fontSize={10}
-                      tickFormatter={v => (v || "").split("-").pop() || ""} minTickGap={18} />
+                      tickFormatter={v => formatDashboardDate(v, false)} minTickGap={18} />
                     <YAxis yAxisId="h" stroke={C.dim} fontSize={10} unit="h" />
                     <YAxis yAxisId="fj" orientation="right" stroke={C.accent2} fontSize={10} />
                     <Tooltip content={<Tip />} />
