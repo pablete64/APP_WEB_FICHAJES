@@ -14,6 +14,8 @@ class User(Base):
     role = Column(String(50), nullable=False, default="")
     password_hash = Column(String(255), nullable=False)
     is_admin = Column(Boolean, default=False)
+    is_super_admin = Column(Boolean, default=False)
+    time_entry_mode = Column(String(20), nullable=False, default="HOURS")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     deleted_at = Column(DateTime(timezone=True), nullable=True) # Soft delete Column
 

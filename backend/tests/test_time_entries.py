@@ -374,3 +374,40 @@ def test_delete_ticket_attachment_removes_only_selected_file(user_client, admin_
     )
     assert delete_response.status_code == 200
     assert len(delete_response.json()["ticket_attachments"]) == 1
+
+
+def test_worker_with_15_minute_mode_can_log_quarter_hours(user_client, admin_client, db_session, seed_projects, seed_tasks, normal_user):
+    normal_user.time_entry_mode = "MINUTES_15"
+    db_session.add(normal_user)
+    db_session.commit()
+
+    project = get_project_by_type(seed_projects, "standard")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")
+    task = get_task_by_code(seed_tasks, "313")
+
+    response = user_client.post("/time-entries/", json={
+        "project_id": project.id,
+        "task_id": task.id,
+        "date": date.today().isoformat(),
+        "hours": 0.25,
+    })
+    assert response.status_code == 201
+
+
+def test_worker_with_30_minute_mode_cannot_log_15_minute_fraction(user_client, admin_client, db_session, seed_projects, seed_tasks, normal_user):
+    normal_user.time_entry_mode = "MINUTES_30"
+    db_session.add(normal_user)
+    db_session.commit()
+
+    project = get_project_by_type(seed_projects, "standard")
+    admin_client.post(f"/projects/{project.id}/assign-user/{normal_user.id}?role=Montadores")
+    task = get_task_by_code(seed_tasks, "313")
+
+    response = user_client.post("/time-entries/", json={
+        "project_id": project.id,
+        "task_id": task.id,
+        "date": date.today().isoformat(),
+        "hours": 0.25,
+    })
+    assert response.status_code == 400
+    assert response.json()["detail"] == "This user must register time in 30-minute intervals."

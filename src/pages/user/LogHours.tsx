@@ -18,6 +18,11 @@ const rolesMatch = (a: string, b: string) =>
 
 const MAX_TICKET_IMAGE_DIMENSION = 1600;
 const TARGET_TICKET_SIZE_BYTES = 1 * 1024 * 1024;
+const TIME_ENTRY_MODE_TO_MINUTES: Record<string, number> = {
+  HOURS: 60,
+  MINUTES_15: 15,
+  MINUTES_30: 30,
+};
 
 const loadImageFromFile = (file: File): Promise<HTMLImageElement> =>
   new Promise((resolve, reject) => {
@@ -125,6 +130,9 @@ export default function LogHours() {
   });
 
   const selectedProject = allProjects.find(p => p.id === projectId);
+  const timeEntryMode = user?.time_entry_mode || "HOURS";
+  const minuteStep = TIME_ENTRY_MODE_TO_MINUTES[timeEntryMode] || 60;
+  const logsByMinutes = timeEntryMode !== "HOURS";
 
   const roleInProject = useMemo(() => {
     if (!selectedProject || !user) return "";
@@ -151,6 +159,12 @@ export default function LogHours() {
   );
 
   const selectedTaskObj = tasks.find(t => t.code === taskCode);
+  const parsedHours = useMemo(() => {
+    if (!hours) return null;
+    const numericValue = parseFloat(hours);
+    if (Number.isNaN(numericValue)) return null;
+    return logsByMinutes ? numericValue / 60 : numericValue;
+  }, [hours, logsByMinutes]);
   // 4XX tasks have requires_extra_fields=true → show transport/ticket panel
   const isClientTask: boolean = (selectedTaskObj as any)?.requires_extra_fields ?? false;
 
@@ -185,7 +199,7 @@ export default function LogHours() {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      if (!user || !projectId || !taskCode || !hours) throw new Error("Datos incompletos");
+      if (!user || !projectId || !taskCode || !hours || parsedHours == null) throw new Error("Datos incompletos");
       if (isClientTask && hasMealTicket && ticketFiles.length === 0) {
         throw new Error("Debes adjuntar al menos un ticket para imputar una dieta.");
       }
@@ -195,7 +209,7 @@ export default function LogHours() {
         task_id: (selectedTaskObj as any)?.id || "",
         date,
         is_holiday: isHoliday,
-        hours: parseFloat(hours),
+        hours: parsedHours,
         overtime_hours: 0,
         ...(isClientTask && {
           vehicle_type: vehicleUsed,
@@ -348,11 +362,22 @@ export default function LogHours() {
           {step === 5 && (
             <>
               <div>
-                <Label>Horas trabajadas</Label>
+                <Label>{logsByMinutes ? "Minutos trabajados" : "Horas trabajadas"}</Label>
                 <Input
-                  type="number" min="0" max="24" step="0.5"
-                  value={hours} onChange={e => setHours(e.target.value)} placeholder="ej. 8"
+                  type="number"
+                  min="0"
+                  max={logsByMinutes ? "1440" : "24"}
+                  step={logsByMinutes ? String(minuteStep) : "1"}
+                  value={hours}
+                  onChange={e => setHours(e.target.value)}
+                  placeholder={logsByMinutes ? `ej. ${minuteStep}` : "ej. 8"}
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {logsByMinutes
+                    ? `Este usuario ficha en bloques de ${minuteStep} minutos.`
+                    : "Este usuario ficha por horas completas."}
+                  {parsedHours != null ? ` Se guardará como ${parsedHours}h en el sistema.` : ""}
+                </p>
               </div>
 
               {isClientTask && (

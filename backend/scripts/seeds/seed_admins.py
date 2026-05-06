@@ -27,6 +27,7 @@ try:
         if user:
             user.password_hash = get_password_hash(a["pwd"])
             user.is_admin = True
+            user.is_super_admin = False
             user.name = a["name"]
         else:
             user = User(
@@ -34,6 +35,7 @@ try:
                 name=a["name"],
                 password_hash=get_password_hash(a["pwd"]),
                 is_admin=True,
+                is_super_admin=False,
                 home_location="Sede Central",
             )
             db.add(user)

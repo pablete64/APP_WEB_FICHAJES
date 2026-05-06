@@ -31,6 +31,7 @@ def seed_demo_data():
             name="Super Admin",
             password_hash=get_password_hash("admin123"),
             is_admin=True,
+            is_super_admin=True,
             home_location="Oficina Central"
         )
         db.add(admin)

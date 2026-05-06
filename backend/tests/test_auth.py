@@ -8,6 +8,8 @@ def test_login_ok(client, normal_user):
     assert "access_token" in json_data
     assert json_data["token_type"] == "bearer"
     assert json_data["user"]["employee_code"] == "user01"
+    assert json_data["user"]["is_super_admin"] is False
+    assert json_data["user"]["time_entry_mode"] == "HOURS"
 
 def test_login_fail(client, normal_user):
     response = client.post(

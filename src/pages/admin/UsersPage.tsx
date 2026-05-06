@@ -10,10 +10,17 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Users, Plus, Trash2, Edit } from "lucide-react";
 import { toast } from "sonner";
 
 import { projectService, ProjectResponse } from "@/services/projectService";
+
+const TIME_ENTRY_MODE_OPTIONS = [
+  { value: "HOURS", label: "Por horas" },
+  { value: "MINUTES_15", label: "Fragmentos de 15 min" },
+  { value: "MINUTES_30", label: "Fragmentos de 30 min" },
+];
 
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
@@ -59,6 +66,8 @@ export default function UsersPage() {
   const [homeLocation, setHomeLocation] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("");
+  const [timeEntryMode, setTimeEntryMode] = useState("HOURS");
+  const [isAdmin, setIsAdmin] = useState(false);
   const [assignedProjects, setAssignedProjects] = useState<any[]>([]);
   const [newProjectId, setNewProjectId] = useState("");
   const [newProjectRole, setNewProjectRole] = useState("");
@@ -70,6 +79,8 @@ export default function UsersPage() {
     setHomeLocation("");
     setPassword("");
     setRole("");
+    setTimeEntryMode("HOURS");
+    setIsAdmin(false);
     setAssignedProjects([]);
     setNewProjectId("");
     setNewProjectRole("");
@@ -86,6 +97,8 @@ export default function UsersPage() {
     setName(user.name);
     setHomeLocation(user.home_location || "");
     setRole(user.role || "");
+    setTimeEntryMode(user.time_entry_mode || "HOURS");
+    setIsAdmin(!!user.is_admin);
     setPassword(""); // Clear password field for security
     setAssignedProjects([...(user.assigned_projects || [])]);
     setNewProjectId("");
@@ -94,7 +107,8 @@ export default function UsersPage() {
   };
 
   const handleSubmit = () => {
-    if (!name || !role) return;
+    const effectiveRole = isAdmin ? (role || "MANAGEMENT") : role;
+    if (!name || !effectiveRole) return;
     
     if (editingUserId) {
       let finalProjects = [...assignedProjects];
@@ -109,7 +123,10 @@ export default function UsersPage() {
            });
         }
       }
-      const data: any = { name, home_location: homeLocation, role, assigned_projects: finalProjects };
+      const data: any = { name, home_location: homeLocation, role: effectiveRole, time_entry_mode: timeEntryMode, assigned_projects: finalProjects };
+      if (currentUser?.is_super_admin) {
+        data.is_admin = isAdmin;
+      }
       if (password) data.password = password;
       updateMutation.mutate({ id: editingUserId, data });
     } else {
@@ -118,8 +135,10 @@ export default function UsersPage() {
         employee_code: employeeCode,
         name,
         home_location: homeLocation,
-        role,
+        role: effectiveRole,
+        time_entry_mode: timeEntryMode,
         password,
+        is_admin: currentUser?.is_super_admin ? isAdmin : false,
       });
     }
   };
@@ -165,9 +184,44 @@ export default function UsersPage() {
               </Select>
             </div>
             <div>
+              <Label>Modo de fichaje</Label>
+              <Select value={timeEntryMode} onValueChange={setTimeEntryMode}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar modo" /></SelectTrigger>
+                <SelectContent>
+                  {TIME_ENTRY_MODE_OPTIONS.map(option => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                Decide si este trabajador ficha por horas completas o en bloques de 15/30 minutos.
+              </p>
+            </div>
+            <div>
               <Label>Contraseña {editingUserId && "(dejar en blanco para no cambiar)"}</Label>
               <Input type="password" value={password} onChange={e => setPassword(e.target.value)} />
             </div>
+            {currentUser?.is_super_admin && (
+              <div className="flex items-center gap-3 rounded-lg border p-3">
+                <Checkbox
+                  id="is-admin"
+                  checked={isAdmin}
+                  onCheckedChange={(checked) => {
+                    const nextIsAdmin = checked === true;
+                    setIsAdmin(nextIsAdmin);
+                    if (nextIsAdmin && !role) {
+                      setRole("MANAGEMENT");
+                    }
+                  }}
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="is-admin">Administrador</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Solo un super admin puede conceder o retirar permisos de administrador. Si no indicas rol, se asigna `MANAGEMENT`.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Edición de roles por proyecto en modo edición */}
             {editingUserId && (
@@ -275,7 +329,11 @@ export default function UsersPage() {
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <p className="font-semibold text-sm truncate">{u.name}</p>
-                {u.is_admin && <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full font-semibold">Admin</span>}
+                {u.is_super_admin ? (
+                  <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-semibold">Super Admin</span>
+                ) : u.is_admin ? (
+                  <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full font-semibold">Admin</span>
+                ) : null}
               </div>
               <p className="text-xs text-muted-foreground">{u.employee_code}</p>
               <p className="text-xs text-muted-foreground">Rol: {u.role || "Sin rol base"}</p>
@@ -286,8 +344,8 @@ export default function UsersPage() {
                 size="icon" 
                 className="h-9 w-9" 
                 onClick={() => handleOpenEdit(u)}
-                disabled={u.is_admin && u.id !== currentUser?.id}
-                title={u.is_admin && u.id !== currentUser?.id ? "No puedes editar a otros administradores" : ""}
+                disabled={(u.is_super_admin && !currentUser?.is_super_admin) || (u.is_admin && u.id !== currentUser?.id && !currentUser?.is_super_admin)}
+                title={(u.is_super_admin && !currentUser?.is_super_admin) ? "Solo un super admin puede editar a otros super admins" : (u.is_admin && u.id !== currentUser?.id && !currentUser?.is_super_admin) ? "Solo un super admin puede editar a otros administradores" : ""}
               >
                 <Edit className="h-4 w-4 text-primary" />
               </Button>
@@ -300,8 +358,8 @@ export default function UsersPage() {
                     deleteMutation.mutate(u.id);
                   }
                 }}
-                disabled={u.is_admin}
-                title={u.is_admin ? "No se pueden eliminar administradores" : ""}
+                disabled={(u.is_super_admin && !currentUser?.is_super_admin) || (u.is_admin && !currentUser?.is_super_admin)}
+                title={(u.is_super_admin && !currentUser?.is_super_admin) ? "Solo un super admin puede eliminar super admins" : (u.is_admin && !currentUser?.is_super_admin) ? "Solo un super admin puede eliminar administradores" : ""}
               >
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
@@ -330,7 +388,11 @@ export default function UsersPage() {
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
                       {u.name}
-                      {u.is_admin && <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full font-semibold">Admin</span>}
+                      {u.is_super_admin ? (
+                        <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-semibold">Super Admin</span>
+                      ) : u.is_admin ? (
+                        <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full font-semibold">Admin</span>
+                      ) : null}
                     </div>
                   </TableCell>
                   <TableCell>{u.role || "Sin rol base"}</TableCell>
@@ -340,8 +402,8 @@ export default function UsersPage() {
                         variant="ghost" 
                         size="icon" 
                         onClick={() => handleOpenEdit(u)}
-                        disabled={u.is_admin && u.id !== currentUser?.id}
-                        title={u.is_admin && u.id !== currentUser?.id ? "No puedes editar a otros administradores" : ""}
+                        disabled={(u.is_super_admin && !currentUser?.is_super_admin) || (u.is_admin && u.id !== currentUser?.id && !currentUser?.is_super_admin)}
+                        title={(u.is_super_admin && !currentUser?.is_super_admin) ? "Solo un super admin puede editar a otros super admins" : (u.is_admin && u.id !== currentUser?.id && !currentUser?.is_super_admin) ? "Solo un super admin puede editar a otros administradores" : ""}
                       >
                         <Edit className="h-4 w-4 text-primary" />
                       </Button>
@@ -353,8 +415,8 @@ export default function UsersPage() {
                             deleteMutation.mutate(u.id);
                           }
                         }}
-                        disabled={u.is_admin}
-                        title={u.is_admin ? "No se pueden eliminar administradores" : ""}
+                        disabled={(u.is_super_admin && !currentUser?.is_super_admin) || (u.is_admin && !currentUser?.is_super_admin)}
+                        title={(u.is_super_admin && !currentUser?.is_super_admin) ? "Solo un super admin puede eliminar super admins" : (u.is_admin && !currentUser?.is_super_admin) ? "Solo un super admin puede eliminar administradores" : ""}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>

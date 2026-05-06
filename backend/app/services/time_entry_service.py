@@ -12,6 +12,18 @@ from app.models.time_entry_ticket import TimeEntryTicket
 from app.schemas.time_entry import TimeEntryCreate
 from app.services.audit_service import log_event
 
+TIME_ENTRY_MODE_TO_MINUTES = {
+    "HOURS": 60,
+    "MINUTES_15": 15,
+    "MINUTES_30": 30,
+}
+
+
+def _is_multiple_of_interval(hours_value: float, minutes_step: int) -> bool:
+    total_minutes = round(hours_value * 60)
+    return abs((hours_value * 60) - total_minutes) < 1e-6 and total_minutes % minutes_step == 0
+
+
 def get_entry_by_id(db: Session, entry_id: str) -> TimeEntry | None:
     return db.query(TimeEntry).filter(TimeEntry.id == entry_id, TimeEntry.deleted_at == None).first()
 
@@ -77,6 +89,21 @@ def _validate_time_entry_business_rules(db: Session, entry_in: TimeEntryCreate, 
     user = db.query(User).filter(User.id == target_user_id, User.deleted_at == None).first()
     if not user:
          raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    if not is_admin:
+        time_entry_mode = (user.time_entry_mode or "HOURS").strip().upper()
+        minutes_step = TIME_ENTRY_MODE_TO_MINUTES.get(time_entry_mode, 60)
+        if not _is_multiple_of_interval(float(entry_in.hours), minutes_step):
+            if time_entry_mode == "HOURS":
+                detail = "This user must register time in full hours."
+            elif time_entry_mode == "MINUTES_15":
+                detail = "This user must register time in 15-minute intervals."
+            else:
+                detail = "This user must register time in 30-minute intervals."
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=detail
+            )
 
     # Obtenemos el rol efectivo (el del proyecto si existe, si no el rol base del usuario)
     project_user = db.query(ProjectUser).filter(

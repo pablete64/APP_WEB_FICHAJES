@@ -14,6 +14,8 @@ export interface UserResponse {
     home_location?: string;
     role: string;
     is_admin: boolean;
+    is_super_admin: boolean;
+    time_entry_mode: string;
     active: boolean;
     created_at: string;
     assigned_projects: AssignedProjectRole[];

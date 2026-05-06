@@ -6,6 +6,8 @@ export interface User {
     name: string;
     role: string;
     is_admin: boolean;
+    is_super_admin: boolean;
+    time_entry_mode: string;
     home_location?: string;
 }
 

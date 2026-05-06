@@ -103,7 +103,22 @@ def admin_user(db_session):
         employee_code="admin99",
         name="Admin Test",
         password_hash=get_password_hash("admin123"),
-        is_admin=True
+        is_admin=True,
+        is_super_admin=False,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+@pytest.fixture(scope="function")
+def super_admin_user(db_session):
+    user = User(
+        employee_code="super99",
+        name="Super Admin Test",
+        password_hash=get_password_hash("super123"),
+        is_admin=True,
+        is_super_admin=True,
     )
     db_session.add(user)
     db_session.commit()
@@ -116,7 +131,8 @@ def normal_user(db_session):
         employee_code="user01",
         name="User Test",
         password_hash=get_password_hash("user123"),
-        is_admin=False
+        is_admin=False,
+        is_super_admin=False,
     )
     db_session.add(user)
     db_session.commit()
@@ -132,6 +148,20 @@ def admin_client(db_session, admin_user):
     response = c.post(
         "/auth/login",
         data={"username": admin_user.employee_code, "password": "admin123"}
+    )
+    token = response.json().get("access_token")
+    c.headers.update({"Authorization": f"Bearer {token}"})
+    return c
+
+@pytest.fixture(scope="function")
+def super_admin_client(db_session, super_admin_user):
+    def override_get_db():
+        yield db_session
+    app.dependency_overrides[get_db] = override_get_db
+    c = TestClient(app)
+    response = c.post(
+        "/auth/login",
+        data={"username": super_admin_user.employee_code, "password": "super123"}
     )
     token = response.json().get("access_token")
     c.headers.update({"Authorization": f"Bearer {token}"})
