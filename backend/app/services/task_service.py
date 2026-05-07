@@ -11,12 +11,12 @@ def seed_default_tasks(db: Session):
         
     task_catalog = [
         # --- BLOQUE 100: OFICINA TÉCNICA ---
-        {"code": "100", "name": "Ofertas", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS", "PROGRAMADORES", "MANAGEMENT"], "requires_extra_fields": False},
+        {"code": "100", "name": "Simulación", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS", "PROGRAMADORES", "MANAGEMENT"], "requires_extra_fields": False},
         {"code": "111", "name": "Gestión Técnica Mecánica", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "MANAGEMENT"], "requires_extra_fields": False},
         {"code": "112", "name": "Diseño 3D", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "MANAGEMENT"], "requires_extra_fields": False},
         {"code": "113", "name": "Diseño 2D", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "MANAGEMENT"], "requires_extra_fields": False},
         {"code": "114", "name": "Documentación Mecánica", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "MANAGEMENT"], "requires_extra_fields": False},
-        {"code": "115", "name": "Estudio ofertas", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "MANAGEMENT"], "requires_extra_fields": False},
+        {"code": "115", "name": "Estudio ofertas", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "PROGRAMADORES", "MANAGEMENT"], "requires_extra_fields": False},
         
         {"code": "121", "name": "Gestión Técnica Eléctrica", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS ELECTRICOS", "PROGRAMADORES", "MANAGEMENT"], "requires_extra_fields": False},
         {"code": "122", "name": "Diseño Elécrico", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS ELECTRICOS", "PROGRAMADORES", "MANAGEMENT"], "requires_extra_fields": False},

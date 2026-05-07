@@ -29,7 +29,7 @@ export const TASKS: TaskDefinition[] = [
   { code: "112", name: "Diseño 3D", category: TASK_CATEGORIES.OFFICINA_TECNICA, roleFilter: ["PROYECTISTAS MECANICOS"] },
   { code: "113", name: "Diseño 2D", category: TASK_CATEGORIES.OFFICINA_TECNICA, roleFilter: ["PROYECTISTAS MECANICOS"] },
   { code: "114", name: "Documentación Mecánica", category: TASK_CATEGORIES.OFFICINA_TECNICA, roleFilter: ["PROYECTISTAS MECANICOS"] },
-  { code: "115", name: "Estudio ofertas", category: TASK_CATEGORIES.OFFICINA_TECNICA, roleFilter: ["PROYECTISTAS MECANICOS"] },
+  { code: "115", name: "Estudio ofertas", category: TASK_CATEGORIES.OFFICINA_TECNICA, roleFilter: ["PROYECTISTAS MECANICOS", "PROGRAMADORES"] },
   
   { code: "121", name: "Gestión Técnica Eléctrica", category: TASK_CATEGORIES.OFFICINA_TECNICA, roleFilter: ["PROYECTISTAS ELECTRICOS"] },
   { code: "122", name: "Diseño Elécrico", category: TASK_CATEGORIES.OFFICINA_TECNICA, roleFilter: ["PROYECTISTAS ELECTRICOS"] },

@@ -89,7 +89,7 @@ def client(db_session):
 def seed_tasks(db_session):
     tasks = [
         Task(code="111", name="Gestión Técnica Mecánica", category="Oficina Técnica", requires_extra_fields=False, allowed_roles=["Proyectistas Mecánicos", "Management"]),
-        Task(code="115", name="Estudio", category="Oficina Técnica", requires_extra_fields=False, allowed_roles=["Proyectistas Mecánicos", "Management"]),
+        Task(code="115", name="Estudio", category="Oficina Técnica", requires_extra_fields=False, allowed_roles=["Proyectistas Mecánicos", "Programadores", "Management"]),
         Task(code="400", name="Viaje", category="Planta Cliente", requires_extra_fields=True, allowed_roles=["Montadores", "Management"]),
         Task(code="313", name="Montaje y PaP", category="Taller Newval", requires_extra_fields=False, allowed_roles=["Montadores", "Management"]),
     ]

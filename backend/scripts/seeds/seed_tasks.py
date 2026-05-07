@@ -16,11 +16,12 @@ def main():
         
         all_production_roles = ["PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS", "PROGRAMADORES", "MONTADORES", "Management"]
         task_catalog = [
+            {"code": "100", "name": "Simulación", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS", "PROGRAMADORES", "Management"], "requires_extra_fields": False},
             {"code": "111", "name": "Gestión Técnica Mecánica", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "Management"], "requires_extra_fields": False},
             {"code": "112", "name": "Diseño 3D", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "Management"], "requires_extra_fields": False},
             {"code": "113", "name": "Diseño 2D", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "Management"], "requires_extra_fields": False},
             {"code": "114", "name": "Documentación Mecánica", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "Management"], "requires_extra_fields": False},
-            {"code": "115", "name": "Estudio ofertas", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "Management"], "requires_extra_fields": False},
+            {"code": "115", "name": "Estudio ofertas", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS MECANICOS", "PROGRAMADORES", "Management"], "requires_extra_fields": False},
             {"code": "121", "name": "Gestión Técnica Eléctrica", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS ELECTRICOS", "Management"], "requires_extra_fields": False},
             {"code": "122", "name": "Diseño Elécrico", "category": "Oficina Técnica", "allowed_roles": ["PROYECTISTAS ELECTRICOS", "Management"], "requires_extra_fields": False},
             {"code": "123", "name": "Programación PLC Off-line", "category": "Oficina Técnica", "allowed_roles": ["PROGRAMADORES", "Management"], "requires_extra_fields": False},

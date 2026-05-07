@@ -145,9 +145,9 @@ export default function HelpPage() {
           
           <div className="space-y-3">
             <div>
-              <p className="font-medium">💼 Ofertas (código 100)</p>
+              <p className="font-medium">💼 Simulación (código 100)</p>
               <ul className="list-disc pl-6 text-xs space-y-0.5 text-muted-foreground">
-                <li>100 – Ofertas</li>
+                <li>100 – Simulación</li>
               </ul>
             </div>
             <div>

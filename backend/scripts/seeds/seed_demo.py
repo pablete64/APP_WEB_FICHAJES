@@ -67,11 +67,12 @@ def seed_demo_data():
     
     task_catalog = [
         # --- BLOQUE 100: OFICINA TÉCNICA ---
+        ("100", "Simulación", "Oficina Técnica", ["PROYECTISTAS MECANICOS", "PROYECTISTAS ELECTRICOS", "PROGRAMADORES", "Management"]),
         ("111", "Gestión Técnica Mecánica", "Oficina Técnica", ["PROYECTISTAS MECANICOS", "Management"]),
         ("112", "Diseño 3D", "Oficina Técnica", ["PROYECTISTAS MECANICOS", "Management"]),
         ("113", "Diseño 2D", "Oficina Técnica", ["PROYECTISTAS MECANICOS", "Management"]),
         ("114", "Documentación Mecánica", "Oficina Técnica", ["PROYECTISTAS MECANICOS", "Management"]),
-        ("115", "Estudio ofertas", "Oficina Técnica", ["PROYECTISTAS MECANICOS", "Management"]),
+        ("115", "Estudio ofertas", "Oficina Técnica", ["PROYECTISTAS MECANICOS", "PROGRAMADORES", "Management"]),
         
         ("121", "Gestión Técnica Eléctrica", "Oficina Técnica", ["PROYECTISTAS ELECTRICOS", "Management"]),
         ("122", "Diseño Elécrico", "Oficina Técnica", ["PROYECTISTAS ELECTRICOS", "Management"]),
