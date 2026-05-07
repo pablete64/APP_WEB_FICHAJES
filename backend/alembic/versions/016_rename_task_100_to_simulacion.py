@@ -1,6 +1,6 @@
 """Rename task 100 to Simulacion
 
-Revision ID: 016_rename_task_100_to_simulacion
+Revision ID: 016_task_100_simulacion
 Revises: 015_add_programmers_to_task_115
 Create Date: 2026-05-07
 
@@ -10,7 +10,7 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision = "016_rename_task_100_to_simulacion"
+revision = "016_task_100_simulacion"
 down_revision = "015_add_programmers_to_task_115"
 branch_labels = None
 depends_on = None

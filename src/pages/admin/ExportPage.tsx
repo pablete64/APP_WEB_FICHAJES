@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { reportService } from "@/services/reportService";
 import { projectService } from "@/services/projectService";
+import { userService } from "@/services/userService";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FileSpreadsheet, Download, Loader2 } from "lucide-react";
@@ -39,17 +40,23 @@ export default function ExportPage() {
 
   const [isExporting, setIsExporting] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("all");
+  const [selectedUserId, setSelectedUserId] = useState<string>("all");
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
 
   const { data: projects = [] } = useQuery({ queryKey: ["adminProjects"], queryFn: projectService.getAllProjects });
+  const { data: users = [] } = useQuery({ queryKey: ["users"], queryFn: userService.getUsers });
 
   // Fetch daily entries to know what dates actually have data
   const { data: dailyEntries = [] } = useQuery({
-    queryKey: ["reportDaily", selectedProjectId],
-    queryFn: () => reportService.getDailyReport(selectedProjectId !== "all" ? { project_id: selectedProjectId } : {})
+    queryKey: ["reportDaily", selectedProjectId, selectedUserId],
+    queryFn: () =>
+      reportService.getDailyReport({
+        ...(selectedProjectId !== "all" ? { project_id: selectedProjectId } : {}),
+        ...(selectedUserId !== "all" ? { user_id: selectedUserId } : {}),
+      })
   });
 
   // Calculate dynamic available years and months
@@ -91,6 +98,9 @@ export default function ExportPage() {
     if (selectedProjectId && selectedProjectId !== "all") {
       f.project_id = selectedProjectId;
     }
+    if (selectedUserId && selectedUserId !== "all") {
+      f.user_id = selectedUserId;
+    }
     // Custom date range takes priority
     if (startDate || endDate) {
       if (startDate) f.start_date = startDate;
@@ -106,15 +116,19 @@ export default function ExportPage() {
       }
     }
     return f;
-  }, [selectedProjectId, selectedYear, selectedMonth, startDate, endDate]);
+  }, [selectedProjectId, selectedUserId, selectedYear, selectedMonth, startDate, endDate]);
 
   const handleExport = async () => {
     try {
       setIsExporting(true);
       const selectedProject = projects.find((p) => p.id === selectedProjectId);
+      const selectedUser = users.find((u) => u.id === selectedUserId);
       const projectPart = selectedProject
         ? sanitizeFilenamePart(`${selectedProject.code}_${selectedProject.name}`)
         : "export";
+      const userPart = selectedUser
+        ? sanitizeFilenamePart(`${selectedUser.employee_code}_${selectedUser.name}`)
+        : "todos";
 
       let periodPart = "historico";
       if (startDate && endDate) {
@@ -129,7 +143,7 @@ export default function ExportPage() {
         periodPart = selectedYear;
       }
 
-      await reportService.exportXLSX(filters, `${projectPart}_${periodPart}.xlsx`);
+      await reportService.exportXLSX(filters, `${projectPart}_${userPart}_${periodPart}.xlsx`);
       toast.success("¡Exportación descargada con éxito!");
     } catch (error) {
       toast.error("Error al exportar los datos");
@@ -161,6 +175,23 @@ export default function ExportPage() {
                   {projects.map(p => (
                     <SelectItem key={p.id} value={p.id}>
                       [{p.code}] {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1.5 block text-muted-foreground">Filtrar por Trabajador (Opcional)</label>
+              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos los trabajadores" />
+                </SelectTrigger>
+                <SelectContent className="max-h-64">
+                  <SelectItem value="all">Todos los trabajadores</SelectItem>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      [{user.employee_code}] {user.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

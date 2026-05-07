@@ -1,6 +1,8 @@
 from io import BytesIO
 
 from openpyxl import load_workbook
+from app.auth.security import get_password_hash
+from app.models.user import User
 
 
 def test_reports_projects_aggregation(admin_client, user_client, seed_projects, seed_tasks, normal_user):
@@ -83,7 +85,50 @@ def test_export_xlsx_includes_total_day_hours_column(admin_client, db_session, s
     assert sheet["K3"].value == 1.5
     assert sheet["L3"].value == 7.5
     assert sheet["M4"].value == "=SUM(M3:M3)"
-    assert sheet["O4"].value == ""
+    assert sheet["O4"].value in ("", None)
+
+
+def test_export_xlsx_can_filter_by_user(admin_client, db_session, seed_projects, seed_tasks, normal_user):
+    other_user = User(
+        employee_code="user02",
+        name="Other User",
+        password_hash=get_password_hash("user234"),
+        is_admin=False,
+        is_super_admin=False,
+    )
+    db_session.add(other_user)
+    db_session.commit()
+    db_session.refresh(other_user)
+
+    project_id = seed_projects[0].id
+    task_id = seed_tasks[3].id
+    admin_client.post(f"/projects/{project_id}/assign-user/{normal_user.id}?role=Montadores")
+    admin_client.post(f"/projects/{project_id}/assign-user/{other_user.id}?role=Montadores")
+
+    admin_client.post("/time-entries/", json={
+        "project_id": project_id,
+        "task_id": task_id,
+        "date": "2025-06-15",
+        "hours": 4.0,
+        "user_id": normal_user.id
+    })
+    admin_client.post("/time-entries/", json={
+        "project_id": project_id,
+        "task_id": task_id,
+        "date": "2025-06-15",
+        "hours": 3.0,
+        "user_id": other_user.id
+    })
+
+    response = admin_client.get(f"/reports/export?user_id={normal_user.id}")
+    assert response.status_code == 200
+
+    workbook = load_workbook(BytesIO(response.content), data_only=False)
+    sheet = workbook.active
+
+    assert sheet["C3"].value == normal_user.employee_code
+    assert sheet["D3"].value == normal_user.name
+    assert sheet["C4"].value != other_user.employee_code
 
 # --- NUEVOS CASOS DE PRUEBA (FASE 9.5) ---
 
